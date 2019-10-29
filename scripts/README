@@ -1,0 +1,7 @@
+generate_tree.py generates complete d-nary tree with height h. 
+run with:
+python generate_tree.py h d > tree_h_d.gr
+
+generate_pebbling.py generates a pebbling-like graph with height h.
+run with:
+python generate_pebbling.py h > pebbling_h_d.gr
