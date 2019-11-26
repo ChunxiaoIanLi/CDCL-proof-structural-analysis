@@ -5,8 +5,7 @@
 path=$1
 file=$2
 twsolver=$3
-
-# CPU and RAM info
+#CPU and RAM info
 echo
 echo "CPU information:"
 echo $(lscpu)
@@ -29,7 +28,7 @@ end=$(($(date +%s%N)/1000000))
 diff=$(($end-$start))
 
 echo
-echo "Glucose executed in:" + $diff + "milliseconds"
+echo "Glucose executed in:" $diff "milliseconds"
 echo
 
 # Drat core computation
@@ -46,7 +45,7 @@ end=$(($(date +%s%N)/1000000))
 diff=$(($end-$start))
 
 echo
-echo "Core computation executed in:" + $diff + "milliseconds"
+echo "Core computation executed in:" $diff "milliseconds"
 echo
 
 # Drat-trim dependency computation
@@ -63,7 +62,7 @@ end=$(($(date +%s%N)/1000000))
 diff=$(($end-$start))
 
 echo
-echo "Dependency computation executed in:" + $diff + "milliseconds"
+echo "Dependency computation executed in:" $diff "milliseconds"
 echo
 
 # .gr conversion
@@ -80,7 +79,7 @@ end=$(($(date +%s%N)/1000000))
 diff=$(($end-$start))
 
 echo
-echo ".gr conversion executed in:" + $diff + "milliseconds"
+echo ".gr conversion executed in:" $diff "milliseconds"
 echo
 
 echo
