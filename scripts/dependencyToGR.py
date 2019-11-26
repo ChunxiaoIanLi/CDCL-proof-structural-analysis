@@ -4,7 +4,7 @@ import sys
 
 inpath=sys.argv[1]
 infile=sys.argv[2]
-outfull="/scratch/ianli/coreGR/"+infile+".gr"
+outfull=inpath+"/"+infile+".gr"
 
 infp=open(inpath+infile, "r")
 outfp=open(outfull, "w")
@@ -17,14 +17,14 @@ while True:
     l = infp.readline().strip()
     if not l:
         break
-    line = map(int, l.split(' '))
-    learntID=line[0]
+    line = l.split(' ')
+    learntID=int(line[0])
     if learntID > vertices:
         vertices = learntID
     for antecedentID in reversed(line[:-1]):
-        if antecedentID == 0:
+        if int(antecedentID) == 0:
             break
-        outstring+=str(antecedentID)+" "+str(learntID)+"\n"
+        outstring+=str(int(antecedentID))+" "+str(int(learntID))+"\n"
         edges+=1
 
 header="p tw "+str(vertices)+" "+str(edges)+"\n"

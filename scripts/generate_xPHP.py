@@ -65,7 +65,7 @@ nClause=n+(n-1)*(n-1+1)*(n-1)/2
 for i in range(n-1, 1, -1):
     nClause+=4*i*(i-1)
 
-outf.write("p cnf {0} {1}\n".format(nVar, nClause))
+outf.write("p cnf {0} {1}\n".format(nVar, int(nClause)))
 
 generatePHP(n, outf)
 generateExtended(n, n, outf)

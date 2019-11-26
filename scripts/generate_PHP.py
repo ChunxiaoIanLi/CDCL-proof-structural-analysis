@@ -33,7 +33,7 @@ outf=open("instances/{0}.cnf".format(n),"w")
 
 nVar=n*(n-1)
 nClause=n+(n-1)*(n-1+1)*(n-1)/2
-outf.write("p cnf {0} {1}\n".format(nVar, nClause))
+outf.write("p cnf {0} {1}\n".format(nVar, int(nClause) ))
 generatePHP(n, outf)
 
 outf.close()
