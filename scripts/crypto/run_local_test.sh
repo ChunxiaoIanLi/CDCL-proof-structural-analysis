@@ -13,6 +13,8 @@ RESTRICT_EXEC=$4
 GLUCOSE_EXEC=$5
 DRAT_EXEC=$6
 
+GENERATE_PROOF="false"
+
 TMP_DIRECTORY="./generated/"
 BASE_NAME="SHA1_${NUM_SHA_ROUNDS}_${NUM_TO_RESTRICT}"
 
@@ -56,9 +58,14 @@ echo "Restricting CNF..."
 $RESTRICT_EXEC "$NUM_TO_RESTRICT" "$GENERATED_CNF" "$RESTRICTED_CNF"
 
 # Run glucose on instance
-echo "Solving instance and generating DRAT proof with glucose..."
-$GLUCOSE_EXEC -certified -certified-output="$GENERATED_DRAT" $RESTRICTED_CNF > $GLUCOSE_LOG
+if [[ $GENERATE_PROOF == "true" ]]; then
+    echo "Solving instance and generating DRAT proof with glucose..."
+    $GLUCOSE_EXEC -certified -certified-output="$GENERATED_DRAT" $RESTRICTED_CNF > $GLUCOSE_LOG
 
-# Generate DRAT proof
-echo "Generating core DRAT proof..."
-$DRAT_EXEC "$RESTRICTED_CNF" "$GENERATED_DRAT" -c $GENERATED_CORE
+    # Generate DRAT proof
+    echo "Generating core DRAT proof..."
+    $DRAT_EXEC "$RESTRICTED_CNF" "$GENERATED_DRAT" -c $GENERATED_CORE
+else
+    echo "Solving instance with glucose..."
+    $GLUCOSE_EXEC $RESTRICTED_CNF > $GLUCOSE_LOG
+fi

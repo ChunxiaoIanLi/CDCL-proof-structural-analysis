@@ -15,6 +15,8 @@ CRYPTO_EXEC=$6
 RESTRICT_EXEC=$7
 GLUCOSE_EXEC=$8
 
+GENERATE_PROOF="true"
+
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT="24:00:00"
 SHARCNET_MEMORY="2G"
@@ -49,7 +51,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         $CRYPTO_EXEC -A counter_chain -r $i > $GENERATED_CNF
 
         # Flip n random bits in the generated CNF
-        $RESTRICT_EXEC "-$j" "$GENERATED_CNF" "$RESTRICTED_CNF"
+        $RESTRICT_EXEC "$j" "$GENERATED_CNF" "$RESTRICTED_CNF"
 
         # Generate job file
         echo "Generating job script"
@@ -60,7 +62,12 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --mem=${SHARCNET_MEMORY}" >> $JOB_SCRIPT
         echo "#SBATCH --job-name=${BASE_NAME}_solve" >> $JOB_SCRIPT
         echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
-        echo "${GLUCOSE_EXEC} ${RESTRICTED_CNF}" >> $JOB_SCRIPT
+
+        if [[ $GENERATE_PROOF == "true" ]]; then
+            echo "${GLUCOSE_EXEC} -certified -certified-output=\"${BASE_NAME}_proof.drat\" ${RESTRICTED_CNF}" >> $JOB_SCRIPT
+        else
+            echo "${GLUCOSE_EXEC} ${RESTRICTED_CNF}" >> $JOB_SCRIPT
+        fi
 
         # Queue job
         sbatch $JOB_SCRIPT
