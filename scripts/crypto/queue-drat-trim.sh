@@ -50,7 +50,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
         echo "#SBATCH --mem=${SHARCNET_MEMORY}" >> $JOB_SCRIPT
         echo "#SBATCH --job-name=${BASE_NAME}_drat" >> $JOB_SCRIPT
-        echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
+        echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_drat.log" >> $JOB_SCRIPT
 
         echo "echo \"CPU information:\"" >> $JOB_SCRIPT
         echo "echo \$(lscpu)" >> $JOB_SCRIPT

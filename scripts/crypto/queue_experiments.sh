@@ -61,7 +61,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
         echo "#SBATCH --mem=${SHARCNET_MEMORY}" >> $JOB_SCRIPT
         echo "#SBATCH --job-name=${BASE_NAME}_solve" >> $JOB_SCRIPT
-        echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
+        echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_glucose.log" >> $JOB_SCRIPT
 
         PROOF_FILE="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_proof.drat"
 
