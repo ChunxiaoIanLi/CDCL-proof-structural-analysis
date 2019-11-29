@@ -1,8 +1,8 @@
 #!/bin/bash
-# This script queues a SHARCNET job for every round-restriction combination
+# This script generates a core proof for a drat proof
 
-if [[ $# -ne 8 ]]; then
-    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <OUT_DIRECTORY> <CRYPTO_EXEC> <RESTRICT_EXEC> <GLUCOSE_EXEC>"
+if [[ $# -ne 6 ]]; then
+    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <OUT_DIRECTORY> <DRAT_EXEC>"
     exit 1
 fi
 
@@ -11,11 +11,7 @@ END_ROUNDS=$2
 BEGIN_RESTRICTIONS=$3
 END_RESTRICTIONS=$4
 OUT_DIRECTORY=$5
-CRYPTO_EXEC=$6
-RESTRICT_EXEC=$7
-GLUCOSE_EXEC=$8
-
-GENERATE_PROOF="true"
+DRAT_EXEC=$6
 
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT="24:00:00"
@@ -42,20 +38,13 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         mkdir -p $OUT_SUBSUBDIRECTORY
 
         BASE_NAME="${i}_${j}_SHA1"
-        GENERATED_CNF="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_generated.cnf"
         RESTRICTED_CNF="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_restricted.cnf"
-
-        # Generate CNF from a randomly generated SHA-1 instance
-        echo "Generating CNF from SHA-1 instance with ${i} rounds and ${j} restrictions..."
-        $CRYPTO_EXEC -A counter_chain -r $i --random_target --print_target |
-        $CRYPTO_EXEC -A counter_chain -r $i > $GENERATED_CNF
-
-        # Flip n random bits in the generated CNF
-        $RESTRICT_EXEC "$j" "$GENERATED_CNF" "$RESTRICTED_CNF"
+        DRAT_PROOF="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_proof.drat"
+        CORE_PROOF="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.drat"
 
         # Generate job file
         echo "Generating job script"
-        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_solve.sh"
+        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_drat_trim.sh"
         echo "#!/bin/bash" > $JOB_SCRIPT
         echo "#SBATCH --account=def-${SHARCNET_ACCOUNT_NAME}" >> $JOB_SCRIPT
         echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
@@ -63,13 +52,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --job-name=${BASE_NAME}_solve" >> $JOB_SCRIPT
         echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
 
-        PROOF_FILE="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_proof.drat"
-
-        if [[ $GENERATE_PROOF == "true" ]]; then
-            echo "${GLUCOSE_EXEC} -certified -certified-output=\"${PROOF_FILE}\" ${RESTRICTED_CNF}" >> $JOB_SCRIPT
-        else
-            echo "${GLUCOSE_EXEC} ${RESTRICTED_CNF}" >> $JOB_SCRIPT
-        fi
+        echo "${DRAT_EXEC} ${RESTRICTED_CNF} ${DRAT_PROOF} -c ${CORE_PROOF}" >> $JOB_SCRIPT
 
         # Queue job
         sbatch $JOB_SCRIPT
