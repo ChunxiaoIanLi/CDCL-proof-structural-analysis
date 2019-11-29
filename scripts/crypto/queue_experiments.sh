@@ -55,7 +55,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
 
         # Generate job file
         echo "Generating job script"
-        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_solve.sh"
+        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_run-glucose.sh"
         echo "#!/bin/bash" > $JOB_SCRIPT
         echo "#SBATCH --account=def-${SHARCNET_ACCOUNT_NAME}" >> $JOB_SCRIPT
         echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
@@ -65,11 +65,22 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
 
         PROOF_FILE="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_proof.drat"
 
+        echo "echo \"CPU information:\"" >> $JOB_SCRIPT
+        echo "echo \$(lscpu)" >> $JOB_SCRIPT
+        echo "echo" >> $JOB_SCRIPT
+        echo "echo \"RAM information:\"" >> $JOB_SCRIPT
+        echo "\$(free -m)" >> $JOB_SCRIPT
+
+        echo "start=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
         if [[ $GENERATE_PROOF == "true" ]]; then
             echo "${GLUCOSE_EXEC} -certified -certified-output=\"${PROOF_FILE}\" ${RESTRICTED_CNF}" >> $JOB_SCRIPT
         else
             echo "${GLUCOSE_EXEC} ${RESTRICTED_CNF}" >> $JOB_SCRIPT
         fi
+        echo "end=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
+
+        echo "diff=\$((\$end-\$start))" >> $JOB_SCRIPT
+        echo "echo \"Glucose executed in:\" \$diff \"milliseconds" >> $JOB_SCRIPT
 
         # Queue job
         sbatch $JOB_SCRIPT

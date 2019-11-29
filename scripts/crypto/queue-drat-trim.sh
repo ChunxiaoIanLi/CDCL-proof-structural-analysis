@@ -52,7 +52,18 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --job-name=${BASE_NAME}_drat" >> $JOB_SCRIPT
         echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
 
-        echo "time ${DRAT_EXEC} ${RESTRICTED_CNF} ${DRAT_PROOF} -c ${CORE_PROOF}" >> $JOB_SCRIPT
+        echo "echo \"CPU information:\"" >> $JOB_SCRIPT
+        echo "echo \$(lscpu)" >> $JOB_SCRIPT
+        echo "echo" >> $JOB_SCRIPT
+        echo "echo \"RAM information:\"" >> $JOB_SCRIPT
+        echo "\$(free -m)" >> $JOB_SCRIPT
+
+        echo "start=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
+        echo "${DRAT_EXEC} ${RESTRICTED_CNF} ${DRAT_PROOF} -c ${CORE_PROOF}" >> $JOB_SCRIPT
+        echo "end=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
+
+        echo "diff=\$((\$end-\$start))" >> $JOB_SCRIPT
+        echo "echo \"Drat trim executed in:\" \$diff \"milliseconds" >> $JOB_SCRIPT
 
         # Queue job
         sbatch $JOB_SCRIPT
