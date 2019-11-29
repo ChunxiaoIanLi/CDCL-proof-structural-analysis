@@ -69,7 +69,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "echo \$(lscpu)" >> $JOB_SCRIPT
         echo "echo" >> $JOB_SCRIPT
         echo "echo \"RAM information:\"" >> $JOB_SCRIPT
-        echo "\$(free -m)" >> $JOB_SCRIPT
+        echo "echo \$(free -m)" >> $JOB_SCRIPT
 
         echo "start=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
         if [[ $GENERATE_PROOF == "true" ]]; then
@@ -80,7 +80,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "end=\$((\$(date +%s%N)/1000000))" >> $JOB_SCRIPT
 
         echo "diff=\$((\$end-\$start))" >> $JOB_SCRIPT
-        echo "echo \"Glucose executed in:\" \$diff \"milliseconds" >> $JOB_SCRIPT
+        echo "echo \"Glucose executed in:\" \$diff \"milliseconds\"" >> $JOB_SCRIPT
 
         # Queue job
         sbatch $JOB_SCRIPT
