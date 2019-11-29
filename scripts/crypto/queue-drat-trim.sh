@@ -49,10 +49,10 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --account=def-${SHARCNET_ACCOUNT_NAME}" >> $JOB_SCRIPT
         echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
         echo "#SBATCH --mem=${SHARCNET_MEMORY}" >> $JOB_SCRIPT
-        echo "#SBATCH --job-name=${BASE_NAME}_solve" >> $JOB_SCRIPT
+        echo "#SBATCH --job-name=${BASE_NAME}_drat" >> $JOB_SCRIPT
         echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
 
-        echo "${DRAT_EXEC} ${RESTRICTED_CNF} ${DRAT_PROOF} -c ${CORE_PROOF}" >> $JOB_SCRIPT
+        echo "time ${DRAT_EXEC} ${RESTRICTED_CNF} ${DRAT_PROOF} -c ${CORE_PROOF}" >> $JOB_SCRIPT
 
         # Queue job
         sbatch $JOB_SCRIPT
