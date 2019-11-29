@@ -63,8 +63,10 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         echo "#SBATCH --job-name=${BASE_NAME}_solve" >> $JOB_SCRIPT
         echo "#SBATCH --output=${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_output.txt" >> $JOB_SCRIPT
 
+        PROOF_FILE="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_proof.drat"
+
         if [[ $GENERATE_PROOF == "true" ]]; then
-            echo "${GLUCOSE_EXEC} -certified -certified-output=\"${BASE_NAME}_proof.drat\" ${RESTRICTED_CNF}" >> $JOB_SCRIPT
+            echo "${GLUCOSE_EXEC} -certified -certified-output=\"${PROOF_FILE}\" ${RESTRICTED_CNF}" >> $JOB_SCRIPT
         else
             echo "${GLUCOSE_EXEC} ${RESTRICTED_CNF}" >> $JOB_SCRIPT
         fi
