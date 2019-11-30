@@ -5,7 +5,7 @@ cd $CWD
 
 getTimeInSeconds() {
     TIME=($(echo $1 | tr ":" "\n"))
-    echo "$((${TIME[0]} * 3600 + ${TIME[1]} * 60 + ${TIME[2]}))"
+    echo "$((${TIME[0]:-0} * 3600 + ${TIME[1]:-0} * 60 + ${TIME[2]:-0}))"
 }
 
 getFormattedTime() {
@@ -151,9 +151,9 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         elif [[ $OPTION == $OPTION_FLOW_CUTTER ]]; then
             # Ensure the gr file exists
             if [[ -f $DEPENDENCY_GRAPH ]]; then
-                TIMEOUT=$(getTimeInSeconds $TIMEOUT)
-                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT + 60)))
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep ${TIMEOUT}; kill \$p"
+                TIMEOUT_SECS=$(getTimeInSeconds "$TIMEOUT")
+                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 60)))
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
             else
                 JOB_COMMAND=""
             fi
