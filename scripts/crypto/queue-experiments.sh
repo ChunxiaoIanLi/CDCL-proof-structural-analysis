@@ -39,7 +39,7 @@ if [[ $END_RESTRICTIONS < $BEGIN_RESTRICTIONS ]]; then
     exit 1
 fi
 
-if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]]; then
+if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]] && [[ $OPTION != $OPTION_FLOW_CUTTER ]]; then
     echo "Received invalid option ${OPTION}"
     echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\""
     exit 1
