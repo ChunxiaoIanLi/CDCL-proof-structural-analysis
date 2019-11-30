@@ -124,7 +124,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         elif [[ $OPTION == $OPTION_FLOW_CUTTER ]]; then
             # Ensure the gr file exists
             if [[ -f $DEPENDENCY_GRAPH ]]; then 
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH}"
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep 1; kill \$p"
             else
                 JOB_COMMAND=""
             fi
