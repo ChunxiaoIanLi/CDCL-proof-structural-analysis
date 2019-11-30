@@ -3,6 +3,33 @@ cd ~
 SCRATCH_DIR="$(pwd)/scratch"
 cd $CWD
 
+getTimeInSeconds() {
+    TIME=($(echo $1 | tr ":" "\n"))
+    echo "$((${TIME[0]} * 3600 + ${TIME[1]} * 60 + ${TIME[2]}))"
+}
+
+getFormattedTime() {
+    SECS=$1
+    HRS=$(($SECS / 3600))
+    SECS=$(($SECS - $HRS * 3600))
+    MINS=$(($SECS / 60))
+    SECS=$(($SECS - $MINS * 60))
+
+    if [[ $HRS -lt 10 ]]; then
+        HRS="0${HRS}"
+    fi
+
+    if [[ $MINS -lt 10 ]]; then
+        MINS="0${MINS}"
+    fi
+
+    if [[ $SECS -lt 10 ]]; then
+        SECS="0${SECS}"
+    fi
+
+    echo "${HRS}:${MINS}:${SECS}"
+}
+
 OPTION_GLUCOSE="glucose"
 OPTION_DRAT="drat"
 OPTION_DEPENDENCY="dependency"
@@ -123,8 +150,10 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             fi
         elif [[ $OPTION == $OPTION_FLOW_CUTTER ]]; then
             # Ensure the gr file exists
-            if [[ -f $DEPENDENCY_GRAPH ]]; then 
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep 1; kill \$p"
+            if [[ -f $DEPENDENCY_GRAPH ]]; then
+                TIMEOUT=$(getTimeInSeconds $TIMEOUT)
+                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT + 60)))
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep ${TIMEOUT}; kill \$p"
             else
                 JOB_COMMAND=""
             fi
@@ -147,7 +176,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             echo "echo \"RAM information:\"" >> $JOB_SCRIPT
             echo "echo \$(free -m)" >> $JOB_SCRIPT
 
-            echo "time ${JOB_COMMAND}" >> $JOB_SCRIPT
+            echo "time (${JOB_COMMAND})" >> $JOB_SCRIPT
 
             # Queue job
             sbatch $JOB_SCRIPT
