@@ -9,7 +9,7 @@ OPTION_DEPENDENCY="dependency"
 OPTION_GR="gr"
 
 if [[ $# -ne 8 ]]; then
-    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <HOURS>"
+    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <TIMEOUT>"
     echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\""
     exit 1
 fi
@@ -21,11 +21,11 @@ END_RESTRICTIONS=$4
 CDCL_REPOSITORY=$5
 OUT_DIRECTORY="${SCRATCH_DIR}/$6"
 OPTION=$7
-HOURS=$8
+TIMEOUT=$8
 
 GENERATE_PROOF="true"
 SHARCNET_ACCOUNT_NAME="vganesh"
-SHARCNET_TIMEOUT="${HOURS}:00:00"
+SHARCNET_TIMEOUT=${TIMEOUT}
 SHARCNET_MEMORY="2G"
 
 if [[ $END_ROUNDS < $BEGIN_ROUNDS ]]; then
@@ -48,7 +48,7 @@ CRYPTO_EXEC="${CDCL_REPOSITORY}/SAT-encoding/crypto/main"
 RESTRICT_EXEC="${CDCL_REPOSITORY}/scripts/crypto/restrictSHA1"
 GLUCOSE_EXEC="${CDCL_REPOSITORY}/executables/glucose"
 DRAT_EXEC="${CDCL_REPOSITORY}/executables/drat-trim"
-GR_EXEC="python ${CDCL_REPOSITORY}/scripts/dependencyToGR.py"
+GR_EXEC="${CDCL_REPOSITORY}/scripts/dependencyToGR.py"
 
 echo
 echo "----------------------------------"
@@ -95,7 +95,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         elif [[ $OPTION == $OPTION_DEPENDENCY ]]; then
             JOB_COMMAND="${DRAT_EXEC} ${RESTRICTED_CNF} ${CORE_PROOF} -r ${CORE_DEPENDENCY}"
         elif [[ $OPTION == $OPTION_GR ]]; then
-            JOB_COMMAND="${GR_EXEC} ${OUT_SUBSUBDIRECTORY}/ ${BASE_NAME}_core.dependency"
+            JOB_COMMAND="python ${GR_EXEC} ${OUT_SUBSUBDIRECTORY}/ ${BASE_NAME}_core.dependency"
         fi
 
         # Generate job file
