@@ -131,7 +131,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         fi
 
         # Generate job file
-        if [[ $JOB_COMMAND == "" ]]; then
+        if [[ $JOB_COMMAND != "" ]]; then
             echo "Generating job script"
             JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.sh"
             echo "#!/bin/bash" > $JOB_SCRIPT
