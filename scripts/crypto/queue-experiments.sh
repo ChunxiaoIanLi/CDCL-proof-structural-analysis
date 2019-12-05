@@ -36,8 +36,8 @@ OPTION_DEPENDENCY="dependency"
 OPTION_GR="gr"
 OPTION_FLOW_CUTTER="flowcutter"
 
-if [[ $# -ne 8 ]]; then
-    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <TIMEOUT>"
+if [[ $# -ne 9 ]]; then
+    echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <TIMEOUT> <MEMORY>"
     echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\""
     exit 1
 fi
@@ -50,11 +50,12 @@ CDCL_REPOSITORY=$5
 OUT_DIRECTORY="${SCRATCH_DIR}/$6"
 OPTION=$7
 TIMEOUT=$8
+MEMORY=$9
 
 GENERATE_PROOF="true"
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT=${TIMEOUT}
-SHARCNET_MEMORY="2G"
+SHARCNET_MEMORY=${MEMORY}
 
 if [[ $END_ROUNDS < $BEGIN_ROUNDS ]]; then
     echo "Cannot begin rounds after the end"
@@ -108,6 +109,8 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         CORE_DEPENDENCY="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency"
         DEPENDENCY_GRAPH="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency.gr"
 
+        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.sh"
+
         if [[ $OPTION == $OPTION_GLUCOSE ]]; then
             # Generate CNF from a randomly generated SHA-1 instance
             echo "Generating CNF from SHA-1 instance with ${i} rounds and ${j} restrictions..."
@@ -152,8 +155,8 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             # Ensure the gr file exists
             if [[ -f $DEPENDENCY_GRAPH ]]; then
                 TIMEOUT_SECS=$(getTimeInSeconds "$TIMEOUT")
-                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 60)))
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
+                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 1800)))
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${JOB_SCRIPT} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
             else
                 JOB_COMMAND=""
             fi
@@ -162,7 +165,6 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         # Generate job file
         if [[ $JOB_COMMAND != "" ]]; then
             echo "Generating job script"
-            JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.sh"
             echo "#!/bin/bash" > $JOB_SCRIPT
             echo "#SBATCH --account=def-${SHARCNET_ACCOUNT_NAME}" >> $JOB_SCRIPT
             echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
