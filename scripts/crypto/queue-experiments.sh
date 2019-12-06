@@ -153,7 +153,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             # Ensure the gr file exists
             if [[ -f $DEPENDENCY_GRAPH ]]; then
                 TIMEOUT_SECS=$(getTimeInSeconds "$TIMEOUT")
-                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 1800)))
+                SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 600)))
                 JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${BASE_NAME}_${OPTION}.results & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
             else
                 JOB_COMMAND=""
