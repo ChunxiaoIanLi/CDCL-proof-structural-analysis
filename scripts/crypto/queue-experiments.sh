@@ -109,8 +109,6 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         CORE_DEPENDENCY="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency"
         DEPENDENCY_GRAPH="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency.gr"
 
-        JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.sh"
-
         if [[ $OPTION == $OPTION_GLUCOSE ]]; then
             # Generate CNF from a randomly generated SHA-1 instance
             echo "Generating CNF from SHA-1 instance with ${i} rounds and ${j} restrictions..."
@@ -156,7 +154,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             if [[ -f $DEPENDENCY_GRAPH ]]; then
                 TIMEOUT_SECS=$(getTimeInSeconds "$TIMEOUT")
                 SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 1800)))
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${JOB_SCRIPT} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${BASE_NAME}_${OPTION}.results & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
             else
                 JOB_COMMAND=""
             fi
@@ -165,6 +163,8 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         # Generate job file
         if [[ $JOB_COMMAND != "" ]]; then
             echo "Generating job script"
+            JOB_SCRIPT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.sh"
+
             echo "#!/bin/bash" > $JOB_SCRIPT
             echo "#SBATCH --account=def-${SHARCNET_ACCOUNT_NAME}" >> $JOB_SCRIPT
             echo "#SBATCH --time=${SHARCNET_TIMEOUT}" >> $JOB_SCRIPT
