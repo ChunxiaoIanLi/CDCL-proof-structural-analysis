@@ -154,7 +154,8 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
             if [[ -f $DEPENDENCY_GRAPH ]]; then
                 TIMEOUT_SECS=$(getTimeInSeconds "$TIMEOUT")
                 SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 600)))
-                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${BASE_NAME}_${OPTION}.results & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
+                FLOWCUTTER_OUTPUT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.results"
+                JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${FLOWCUTTER_OUTPUT} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
             else
                 JOB_COMMAND=""
             fi
