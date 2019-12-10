@@ -1,21 +1,19 @@
 def resolvable(c1, c2):
     for lit1 in c1:
-        for lit2 in c2:
-            if int(lit1) == -int(lit2):
-                return True
+        if -lit1 in c2:
+            return True
     return False
 
 def share_literal(c1, c2):
     for lit1 in c1:
-        for lit2 in c2:
-            if int(lit1) == int(lit2):
-                return True
+        if lit1 in c2:
+            return True
     return False
 
 in_file = './test.cnf'
 cnf_clauses = []
 for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
-    cnf_clauses.append((line.split(' ')[:-1], id))
+    cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id])
 
 mig_clauses = []
 index = 0
