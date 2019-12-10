@@ -15,7 +15,7 @@ def share_literal(c1, c2):
 in_file = './test.cnf'
 cnf_clauses = []
 for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
-    cnf_clauses.append((line.split(' ')[0:2], id))
+    cnf_clauses.append((line.split(' ')[:-1], id))
 
 mig_clauses = []
 index = 0
@@ -36,3 +36,5 @@ with open(out_file, 'w+') as f:
     for clause in mig_clauses:
         str_clause = list(map(str, clause))
         f.write(' '.join(str_clause) + '\n')
+    
+print('conversion finished!')
