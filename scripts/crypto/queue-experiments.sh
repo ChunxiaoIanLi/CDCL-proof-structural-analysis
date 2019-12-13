@@ -35,10 +35,11 @@ OPTION_DRAT="drat"
 OPTION_DEPENDENCY="dependency"
 OPTION_GR="gr"
 OPTION_FLOW_CUTTER="flowcutter"
+OPTION_MIG="mig"
 
 if [[ $# -ne 9 ]]; then
     echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <TIMEOUT> <MEMORY>"
-    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\""
+    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\" \"${OPTION_MIG}\""
     exit 1
 fi
 
@@ -67,9 +68,9 @@ if [[ $END_RESTRICTIONS < $BEGIN_RESTRICTIONS ]]; then
     exit 1
 fi
 
-if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]] && [[ $OPTION != $OPTION_FLOW_CUTTER ]]; then
+if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]] && [[ $OPTION != $OPTION_FLOW_CUTTER ]] && [[ $OPTION != $OPTION_MIG ]]; then
     echo "Received invalid option ${OPTION}"
-    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\""
+    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\", \"${OPTION_MIG}\""
     exit 1
 fi
 
@@ -79,6 +80,7 @@ GLUCOSE_EXEC="${CDCL_REPOSITORY}/executables/glucose"
 DRAT_EXEC="${CDCL_REPOSITORY}/executables/drat-trim"
 GR_EXEC="${CDCL_REPOSITORY}/scripts/dependencyToGR.py"
 FLOWCUTTER_EXEC="${CDCL_REPOSITORY}/executables/flow_cutter_pace17"
+MIG_EXEC="${CDCL_REPOSITORY}/scripts/crypto/CnfToMig.py"
 
 echo
 echo "----------------------------------"
@@ -108,6 +110,7 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
         CORE_PROOF="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.drat"
         CORE_DEPENDENCY="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency"
         DEPENDENCY_GRAPH="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_core.dependency.gr"
+        MIG_GRAPH="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_mig.gr"
 
         if [[ $OPTION == $OPTION_GLUCOSE ]]; then
             # Generate CNF from a randomly generated SHA-1 instance
@@ -156,6 +159,13 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
                 SHARCNET_TIMEOUT=$(getFormattedTime $(($TIMEOUT_SECS + 600)))
                 FLOWCUTTER_OUTPUT="${OUT_SUBSUBDIRECTORY}/${BASE_NAME}_${OPTION}.results"
                 JOB_COMMAND="${FLOWCUTTER_EXEC} < ${DEPENDENCY_GRAPH} >> ${FLOWCUTTER_OUTPUT} & p=\$!; sleep ${TIMEOUT_SECS}; kill \$p"
+            else
+                JOB_COMMAND=""
+            fi
+        elif [[ $OPTION == $OPTION_MIG ]]; then
+            # Ensure the cnf file exists
+            if [[ -f $RESTRICTED_CNF ]]; then
+                JOB_COMMAND="python ${MIG_EXEC} ${RESTRICTED_CNF} ${MIG_GRAPH}"
             else
                 JOB_COMMAND=""
             fi
