@@ -1,0 +1,46 @@
+import sys
+
+def resolvable(c1, c2):
+    for lit1 in c1:
+        if -lit1 in c2:
+            return True
+    return False
+
+def share_literal(c1, c2):
+    for lit1 in c1:
+        if lit1 in c2:
+            return True
+    return False
+
+if len(sys.argv) != 3:
+    print('Usage: ' + str(sys.argv[0]) + ' <IN_FILE> <OUT_FILE>')
+    exit(1)
+
+in_file = sys.argv[1]
+cnf_clauses = []
+
+for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
+    if line[0] != 'c' and line[0] != 'p':
+        cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id])
+
+mig_clauses = []
+index = 0
+for clause1, id1 in cnf_clauses:
+    for clause2, id2 in cnf_clauses[index + 1:]:
+        if resolvable(clause1, clause2):
+            if share_literal(clause1, clause2):
+                mig_clauses.append([id1, id2])
+    index += 1
+
+vertices_set = []
+for clause in mig_clauses:
+    vertices_set = vertices_set + clause
+vertices_count = len(set(vertices_set))
+out_file = sys.argv[2]
+with open(out_file, 'w+') as f:
+    f.write('p tw '+ str(vertices_count) + ' ' + str(len(mig_clauses)) + '\n')
+    for clause in mig_clauses:
+        str_clause = list(map(str, clause))
+        f.write(' '.join(str_clause) + '\n')
+    
+print('conversion finished!')
