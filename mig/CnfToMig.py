@@ -1,3 +1,5 @@
+import sys
+
 def resolvable(c1, c2):
     for lit1 in c1:
         if -lit1 in c2:
@@ -10,10 +12,12 @@ def share_literal(c1, c2):
             return True
     return False
 
-in_file = './test.cnf'
+in_file = sys.argv[1]
+out_file = sys.argv[2]
 cnf_clauses = []
 for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
-    cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id])
+    if line[0] != 'c':
+        cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id+1])
 
 mig_clauses = []
 index = 0
@@ -28,7 +32,7 @@ vertices_set = []
 for clause in mig_clauses:
     vertices_set = vertices_set + clause
 vertices_count = len(set(vertices_set))
-out_file = './out.gr'
+
 with open(out_file, 'w+') as f:
     f.write('p tw '+ str(vertices_count) + ' ' + str(len(mig_clauses)) + '\n')
     for clause in mig_clauses:
