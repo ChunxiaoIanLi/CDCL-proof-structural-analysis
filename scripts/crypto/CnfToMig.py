@@ -12,16 +12,12 @@ def share_literal(c1, c2):
             return True
     return False
 
-if len(sys.argv) != 3:
-    print('Usage: ' + str(sys.argv[0]) + ' <IN_FILE> <OUT_FILE>')
-    exit(1)
-
 in_file = sys.argv[1]
+out_file = sys.argv[2]
 cnf_clauses = []
-
 for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
-    if line[0] != 'c' and line[0] != 'p':
-        cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id])
+    if line[0] != 'c':
+        cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id+1])
 
 mig_clauses = []
 index = 0
@@ -36,7 +32,7 @@ vertices_set = []
 for clause in mig_clauses:
     vertices_set = vertices_set + clause
 vertices_count = len(set(vertices_set))
-out_file = sys.argv[2]
+
 with open(out_file, 'w+') as f:
     f.write('p tw '+ str(vertices_count) + ' ' + str(len(mig_clauses)) + '\n')
     for clause in mig_clauses:
