@@ -16,7 +16,7 @@ in_file = sys.argv[1]
 out_file = sys.argv[2]
 cnf_clauses = []
 for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
-    if line[0] != 'c':
+    if line[0] != 'c' and line[0] != 'p':
         cnf_clauses.append([list(map(int, line.split(' ')[:-1])), id+1])
 
 mig_clauses = []
