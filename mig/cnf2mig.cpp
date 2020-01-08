@@ -1,9 +1,45 @@
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+
+std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<std::vector<int>>& clauses) {
+    // Naive merge check
+    const int SHARES_LIT = 0x1 << 0;
+    const int SHARES_NEG = 0x1 << 1;
+    const int MERGY = SHARES_LIT | SHARES_NEG;
+
+    std::unique_ptr<std::vector<std::vector<int>>> migClauses = std::make_unique<std::vector<std::vector<int>>>();
+
+    for (unsigned int ci = 0; ci < clauses.size(); ++ci) {
+        const std::vector<int>& c1 = clauses[ci];
+        for (unsigned int cj = ci + 1; cj < clauses.size(); ++cj) {
+            const std::vector<int>& c2 = clauses[cj];
+
+            // Check if clauses are mergy
+            int shareState = 0;
+            for (int vi = 0; vi < c1.size() && shareState != MERGY; ++vi) {
+                for (int vj = 0; vj < c2.size() && shareState != MERGY; ++vj) {
+                    if (c1[vi] == c2[vj]) {
+                        shareState |= SHARES_LIT;
+                    } else if (c1[vi] == -c2[vj]) {
+                        shareState |= SHARES_NEG;
+                    }
+                }
+            }
+
+            // Add a MIG clause if the CNF clauses are mergy
+            if (shareState == MERGY) {
+                migClauses->push_back(std::vector<int>{static_cast<int>(ci), static_cast<int>(cj)});
+            }
+        }
+    }
+
+    return migClauses;
+}
 
 int main (int argc, char** argv) {
     // Input validation
@@ -59,36 +95,8 @@ int main (int argc, char** argv) {
         }
     }
 
-    // Naive merge check
-    const int SHARES_LIT = 0x1 << 0;
-    const int SHARES_NEG = 0x1 << 1;
-    const int MERGY = SHARES_LIT | SHARES_NEG;
-
-    std::vector<std::vector<int>> migClauses{};
-
-    for (unsigned int ci = 0; ci < clauses.size(); ++ci) {
-        std::vector<int>& c1 = clauses[ci];
-        for (unsigned int cj = ci + 1; cj < clauses.size(); ++cj) {
-            std::vector<int>& c2 = clauses[cj];
-
-            // Check if clauses are mergy
-            int shareState = 0;
-            for (int vi = 0; vi < c1.size() && shareState != MERGY; ++vi) {
-                for (int vj = 0; vj < c2.size() && shareState != MERGY; ++vj) {
-                    if (c1[vi] == c2[vj]) {
-                        shareState |= SHARES_LIT;
-                    } else if (c1[vi] == -c2[vj]) {
-                        shareState |= SHARES_NEG;
-                    }
-                }
-            }
-
-            // Add a MIG clause if the CNF clauses are mergy
-            if (shareState == MERGY) {
-                migClauses.push_back(std::vector<int>{static_cast<int>(ci), static_cast<int>(cj)});
-            }
-        }
-    }
+    // Get mergy clauses
+    std::unique_ptr<std::vector<std::vector<int>>> migClauses = getMigClauses(clauses);
 
     // Open output file
     FILE* migFile = fopen(argv[2], "w");
@@ -97,11 +105,11 @@ int main (int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    fprintf(migFile, "p tw %u %lu\n", numClauses, migClauses.size());
+    fprintf(migFile, "p tw %u %lu\n", numClauses, migClauses->size());
 
     // Output MIG clauses
-    for (int i = 0; i < migClauses.size(); ++i) {
-        const std::vector<int>& clause = migClauses[i];
+    for (int i = 0; i < migClauses->size(); ++i) {
+        const std::vector<int>& clause = (*migClauses)[i];
         for (int j = 0; j < clause.size(); ++j) {
             fprintf(migFile, "%d ", clause[j] + 1);
         }
