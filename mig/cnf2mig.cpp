@@ -1,13 +1,14 @@
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
 #include <vector>
 
-std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<std::vector<int>>& clauses) {
-    // Naive merge check
+// Naive merge check
+std::unique_ptr<std::vector<std::vector<int>>> getMigClausesNaive(const std::vector<std::vector<int>>& clauses) {
     const int SHARES_LIT = 0x1 << 0;
     const int SHARES_NEG = 0x1 << 1;
     const int MERGY = SHARES_LIT | SHARES_NEG;
@@ -41,10 +42,52 @@ std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<s
     return migClauses;
 }
 
+// Optimized merge check
+std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<std::vector<int>>& clauses) {
+    // Map from a literal to a list of clauses in which the literal occurs
+    std::map<int, std::vector<int>> literalMap{};
+    for (unsigned int i = 0; i < clauses.size(); ++i) {
+        const std::vector<int>& clause = clauses[i];
+        for (int lit : clause) {
+            auto foundIter = literalMap.find(lit);
+            if (foundIter == literalMap.end()) {
+                literalMap.emplace(lit, std::vector<int>{static_cast<int>(i)});
+            } else {
+                foundIter->second.push_back(static_cast<int>(i));
+            }
+        }
+    }
+
+    std::unique_ptr<std::vector<std::vector<int>>> migClauses = std::make_unique<std::vector<std::vector<int>>>();
+
+    for (const auto pair : literalMap) {
+        // Find clauses that also share a negated literal
+        for (unsigned int ci = 0; ci < pair.second.size(); ++ci) {
+            const std::vector<int>& c1 = clauses[pair.second[ci]];
+            for (unsigned int cj = ci + 1; cj < pair.second.size(); ++cj) {
+                const std::vector<int>& c2 = clauses[pair.second[cj]];
+
+                // Check if clauses share a negated literal
+                for (unsigned int vi = 0; vi < c1.size(); ++vi) {
+                    for (unsigned int vj = 0; vj < c2.size(); ++vj) {
+                        if (c1[vi] == -c2[vj]) {
+                            migClauses->push_back(std::vector<int>{pair.second[ci], pair.second[cj]});
+                            goto DOUBLEBREAK;
+                        }
+                    }
+                }
+                DOUBLEBREAK: continue;
+            }
+        }
+    }
+
+    return migClauses;
+}
+
 int main (int argc, char** argv) {
     // Input validation
-    if (argc != 3) {
-        std::cerr << "Usage: " << argv[0] << " <INPUT_CNF> <OUTPUT_MIG>" << std::endl;
+    if (argc != 4) {
+        std::cerr << "Usage: " << argv[0] << " <INPUT_CNF> <OUTPUT_MIG> <USE_NAIVE{0, 1}>" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -96,7 +139,14 @@ int main (int argc, char** argv) {
     }
 
     // Get mergy clauses
-    std::unique_ptr<std::vector<std::vector<int>>> migClauses = getMigClauses(clauses);
+    std::unique_ptr<std::vector<std::vector<int>>> migClauses;
+    if (argv[3][0] == '0') {
+        std::cout << "Using literal mapping algorithm" << std::endl;
+        migClauses = getMigClauses(clauses);
+    } else {
+        std::cout << "Using naive algorithm" << std::endl;
+        migClauses = getMigClausesNaive(clauses);
+    }
 
     // Open output file
     FILE* migFile = fopen(argv[2], "w");
