@@ -8,7 +8,7 @@
 #include <vector>
 
 // Naive merge check
-std::unique_ptr<std::vector<std::vector<int>>> getMigClausesNaive(const std::vector<std::vector<int>>& clauses) {
+std::unique_ptr<std::vector<std::vector<int>>> getMigClausesNaive(const std::vector<std::vector<int>>& clauses, int numVars) {
     const int SHARES_LIT = 0x1 << 0;
     const int SHARES_NEG = 0x1 << 1;
     const int MERGY = SHARES_LIT | SHARES_NEG;
@@ -43,18 +43,21 @@ std::unique_ptr<std::vector<std::vector<int>>> getMigClausesNaive(const std::vec
 }
 
 // Optimized merge check
-std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<std::vector<int>>& clauses) {
+std::unique_ptr<std::vector<std::vector<int>>> getMigClauses(const std::vector<std::vector<int>>& clauses, int numVars) {
     // Map from a literal to a list of clauses in which the literal occurs
     std::map<int, std::vector<int>> literalMap{};
+
+    // Initialize map
+    for (int i = 1; i <= numVars; ++i) {
+        literalMap.emplace(+i, std::vector<int>{});
+        literalMap.emplace(-i, std::vector<int>{});
+    }
+
+    // Populate map based on clauses
     for (unsigned int i = 0; i < clauses.size(); ++i) {
         const std::vector<int>& clause = clauses[i];
         for (int lit : clause) {
-            auto foundIter = literalMap.find(lit);
-            if (foundIter == literalMap.end()) {
-                literalMap.emplace(lit, std::vector<int>{static_cast<int>(i)});
-            } else {
-                foundIter->second.push_back(static_cast<int>(i));
-            }
+            literalMap.find(lit)->second.push_back(static_cast<int>(i));
         }
     }
 
@@ -142,10 +145,10 @@ int main (int argc, char** argv) {
     std::unique_ptr<std::vector<std::vector<int>>> migClauses;
     if (argv[3][0] == '0') {
         std::cout << "Using literal mapping algorithm" << std::endl;
-        migClauses = getMigClauses(clauses);
+        migClauses = getMigClauses(clauses, numVars);
     } else {
         std::cout << "Using naive algorithm" << std::endl;
-        migClauses = getMigClausesNaive(clauses);
+        migClauses = getMigClausesNaive(clauses, numVars);
     }
 
     // Open output file
