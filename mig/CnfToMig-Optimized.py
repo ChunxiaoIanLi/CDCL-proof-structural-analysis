@@ -2,20 +2,24 @@ import sys
 
 in_file = sys.argv[1]
 out_file = sys.argv[2]
+filelines = open(in_file, 'r').readlines()
+lit_count = filelines[0].split(' ')[2]
+
 cnf_clauses = [None]
-for id, line in enumerate(open(in_file, 'r').readlines()[1:]):
+for id, line in enumerate(filelines[1:]):
     if line[0] != 'c':
         cnf_clauses.append(list(map(int, line.split(' ')[:-1])))
 
 clause_list = {}
+for lit in range(int(lit_count)):
+    clause_list[lit + 1] = []
+    clause_list[-1 * (lit + 1)] = []
+
 for id, clause in enumerate(cnf_clauses):
     if id == 0:
         continue
     for lit in clause:
-        if lit in clause_list:
-            clause_list[lit].append(id)
-        else:
-            clause_list[lit] = [id]
+        clause_list[lit].append(id)
 
 
 mig_clauses = []
