@@ -31,6 +31,7 @@ getFormattedTime() {
 }
 
 OPTION_GLUCOSE="glucose"
+OPTION_GLUCOSE_NOPROOF="glucose_noproof"
 OPTION_DRAT="drat"
 OPTION_DEPENDENCY="dependency"
 OPTION_GR="gr"
@@ -39,7 +40,7 @@ OPTION_MIG="mig"
 
 if [[ $# -ne 9 ]]; then
     echo "Usage: $0 <BEGIN_ROUNDS> <END_ROUNDS> <BEGIN_RESTRICTIONS> <END_RESTRICTIONS> <CDCL_REPOSITORY> <OUT_DIRECTORY> <OPTION> <TIMEOUT> <MEMORY>"
-    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\" \"${OPTION_MIG}\""
+    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_GLUCOSE_NOPROOF}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\" \"${OPTION_MIG}\""
     exit 1
 fi
 
@@ -53,7 +54,6 @@ OPTION=$7
 TIMEOUT=$8
 MEMORY=$9
 
-GENERATE_PROOF="true"
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT=${TIMEOUT}
 SHARCNET_MEMORY=${MEMORY}
@@ -68,9 +68,9 @@ if [[ $END_RESTRICTIONS < $BEGIN_RESTRICTIONS ]]; then
     exit 1
 fi
 
-if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]] && [[ $OPTION != $OPTION_FLOW_CUTTER ]] && [[ $OPTION != $OPTION_MIG ]]; then
+if [[ $OPTION != $OPTION_GLUCOSE ]] && [[ $OPTION != $OPTION_GLUCOSE_NOPROOF ]] && [[ $OPTION != $OPTION_DRAT ]] && [[ $OPTION != $OPTION_DEPENDENCY ]] && [[ $OPTION != $OPTION_GR ]] && [[ $OPTION != $OPTION_FLOW_CUTTER ]] && [[ $OPTION != $OPTION_MIG ]]; then
     echo "Received invalid option ${OPTION}"
-    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\", \"${OPTION_MIG}\""
+    echo "Options: \"${OPTION_GLUCOSE}\", \"${OPTION_GLUCOSE_NOPROOF}\", \"${OPTION_DRAT}\", \"${OPTION_DEPENDENCY}\", \"${OPTION_GR}\", \"${OPTION_FLOW_CUTTER}\" \"${OPTION_MIG}\""
     exit 1
 fi
 
@@ -123,11 +123,14 @@ for ((i = $BEGIN_ROUNDS; i <= $END_ROUNDS; i++)); do
 
             # Ensure the CNF file exists
             if [[ -f $RESTRICTED_CNF ]]; then
-                if [[ $GENERATE_PROOF == "true" ]]; then
-                    JOB_COMMAND="${GLUCOSE_EXEC} -certified -certified-output=\"${DRAT_PROOF}\" ${RESTRICTED_CNF}"
-                else
-                    JOB_COMMAND="${GLUCOSE_EXEC} ${RESTRICTED_CNF}"
-                fi
+                JOB_COMMAND="${GLUCOSE_EXEC} -certified -certified-output=\"${DRAT_PROOF}\" ${RESTRICTED_CNF}"
+            else
+                JOB_COMMAND=""
+            fi
+        elif [[ $OPTION == $OPTION_GLUCOSE_NOPROOF ]]; then
+             # Ensure the CNF file exists
+            if [[ -f $RESTRICTED_CNF ]]; then
+                JOB_COMMAND="${GLUCOSE_EXEC} ${RESTRICTED_CNF}"
             else
                 JOB_COMMAND=""
             fi
