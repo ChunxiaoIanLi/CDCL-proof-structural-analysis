@@ -115,7 +115,13 @@ int main (int argc, char** argv) {
             if (numVars == -1 && numClauses == -1) {
                 std::istringstream headerLine(line);
                 headerLine >> firstChar;
-                if (!(headerLine >> numVars >> numClauses) || numVars == -1 || numClauses == -1) {
+                if (
+                    (line[1] != ' ' && line[1] != '\t') ||
+                    !(headerLine >> firstChar) || firstChar != 'c' ||
+                    !(headerLine >> firstChar) || firstChar != 'n' ||
+                    !(headerLine >> firstChar) || firstChar != 'f' ||
+                    !(headerLine >> numVars >> numClauses) || numVars == -1 || numClauses == -1
+                ) {
                     std::cerr << "Could not initialize from header line: \"" << line << "\"" << std::endl;
                     return EXIT_FAILURE;
                 };
