@@ -8,7 +8,7 @@ m=int(sys.argv[2])
 k=int(sys.argv[3])
 
 
-def generateLowVec(n, m, k):
+def generateUniformVec(n, m, k):
     ave = int(m*k/n)
     remainder= int((m*k)%n)
     vec = [ave]*n
@@ -17,8 +17,8 @@ def generateLowVec(n, m, k):
         remainder-=1
     return vec
 
-def generateHighVec(n, m, k):
-    vec=generateLowVec(int(n/2), m, k)
+def generatePowerlawVec(n, m, k):
+    vec=generateUniformVec(int(n/2), m, k)
     
     for i in range(len(vec)):
         vec[i]-=1
@@ -29,9 +29,9 @@ def generateHighVec(n, m, k):
         vec.append(1)
     return vec
 
-def generateMediumVec(n, m, k):
+def generateRandomVec(n, m, k):
     #somehow vec[0] is not modified after this call?
-    vec=generateHighVec(n, m, k)
+    vec=generatePowerlawVec(n, m, k)
     max=vec[0]-2
     for i in range(n/2):
         diff=random.randint(0, max)
@@ -70,41 +70,42 @@ def generateRandomFormula(n, m, k, cummulative_vec, outf):
     return
 
 if not os.path.exists("instances"):
-    if not os.path.exists("instances/low"):
-        os.makedirs("instances/low")
-    if not os.path.exists("instances/high"):
-        os.makedirs("instances/high")
-    if not os.path.exists("instances/medium"):
-        os.makedirs("instances/medium")   
+    os.makedirs("instances")
+    if not os.path.exists("instances/uniform"):
+        os.makedirs("instances/uniform")
+    if not os.path.exists("instances/powerlaw"):
+        os.makedirs("instances/powerlaw")
+    if not os.path.exists("instances/random"):
+        os.makedirs("instances/random")   
 
-lowvec=generateLowVec(n, m, k)
-highvec=generateHighVec(n, m, k)
-mediumvec=generateMediumVec(n, m, k)
 
-#print(lowvec, vecsum(lowvec))
-#print(highvec, vecsum(highvec))
-#print(mediumvec, vecsum(mediumvec))
+#print(uniformvec, vecsum(uniformvec))
+#print(powerlawvec, vecsum(powerlawvec))
+#print(randomvec, vecsum(randomvec))
 
-#generating low
-cummulative_vec=generateCummulative(lowvec)
-for i in range(1):
-    outf=open("instances/low/{0}.cnf".format(i),"w")
+#generating uniform
+uniformvec=generateUniformVec(n, m, k)
+cummulative_vec=generateCummulative(uniformvec)
+for i in range(50):
+    outf=open("instances/uniform/{0}.cnf".format(i),"w")
     outf.write("p cnf {0} {1}\n".format(n, m))
     generateRandomFormula(n, m, k, cummulative_vec, outf)
     outf.close()
 
-# #generating high
-cummulative_vec=generateCummulative(lowvec)
-for i in range(1):
-    outf=open("instances/high/{0}.cnf".format(i),"w")
+# #generating powerlaw
+powerlawvec=generatePowerlawVec(n, m, k)
+cummulative_vec=generateCummulative(powerlawvec)
+for i in range(50):
+    outf=open("instances/powerlaw/{0}.cnf".format(i),"w")
     outf.write("p cnf {0} {1}\n".format(n, m))
     generateRandomFormula(n, m, k, cummulative_vec, outf)
     outf.close()
 
-# #generating medium
-cummulative_vec=generateCummulative(lowvec)
-for i in range(1):
-    outf=open("instances/medium/{0}.cnf".format(i),"w")
+# #generating random
+for i in range(50):
+    randomvec=generateRandomVec(n, m, k)
+    cummulative_vec=generateCummulative(randomvec)
+    outf=open("instances/random/{0}.cnf".format(i),"w")
     outf.write("p cnf {0} {1}\n".format(n, m))
     generateRandomFormula(n, m, k, cummulative_vec, outf)
     outf.close()
