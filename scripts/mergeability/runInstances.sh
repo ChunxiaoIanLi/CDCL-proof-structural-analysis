@@ -24,7 +24,7 @@ fi
 
 # run instance
 runinstance() {
-	echo $1
+	echo "${1}.cnf"
 }
 
 # output hard instances
@@ -52,7 +52,7 @@ while read LINE; do
 	TYPE=${ARRAY[1]%,*}
 	FILE=${ARRAY[2]%,*}
 	TIME=${ARRAY[3]%,*}
-	CNF_FILE="${MAIN_DIR}/ratio${RATIO}/instances/${TYPE}/${FILE}.cnf"
+	BASE_FILE_NAME="${MAIN_DIR}/ratio${RATIO}/instances/${TYPE}/${FILE}"
 
 	if [[ "${RATIO}/${TYPE}" != ${PREV_TYPE} ]]; then
 		outputbuffer
@@ -64,12 +64,12 @@ while read LINE; do
 
 	# output easy instances
 	if [[ $COUNT -lt ${NUM_TO_EXECUTE} ]]; then
-		runinstance ${CNF_FILE}
+		runinstance ${BASE_FILE_NAME}
 	fi
 
 	# add CNF to buffer
 	INDEX=$((COUNT % NUM_TO_EXECUTE))
-	BUFFER[${INDEX}]=${CNF_FILE}
+	BUFFER[${INDEX}]=${BASE_FILE_NAME}
 	COUNT=$((COUNT + 1))
 done < ${INSTANCES_FILE}
 
