@@ -34,7 +34,7 @@ outputbuffer() {
 		if [[ ${NUM_TO_OUTPUT} -gt ${NUM_TO_EXECUTE} ]]; then
 			NUM_TO_OUTPUT=${NUM_TO_EXECUTE}
 		fi
-		START_INDEX=${INDEX}
+		START_INDEX=$(((COUNT - NUM_TO_OUTPUT) % NUM_TO_EXECUTE))
 		END_INDEX=$((START_INDEX + NUM_TO_OUTPUT))
 
 		while [[ ${START_INDEX} -lt ${END_INDEX} ]]; do
@@ -67,11 +67,10 @@ while read LINE; do
 		runinstance ${CNF_FILE}
 	fi
 
-	COUNT=$((COUNT + 1))
-
 	# add CNF to buffer
 	INDEX=$((COUNT % NUM_TO_EXECUTE))
 	BUFFER[${INDEX}]=${CNF_FILE}
+	COUNT=$((COUNT + 1))
 done < ${INSTANCES_FILE}
 
 outputbuffer
