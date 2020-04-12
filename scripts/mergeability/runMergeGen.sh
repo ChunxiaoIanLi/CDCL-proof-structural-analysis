@@ -26,7 +26,7 @@ fi
 
 # run instance
 runinstance() {
-	FILENAME = $1 | rev | cut -d "/" -f 1 | rev
+	FILENAME=$1 | rev | cut -d "/" -f 1 | rev
 	../../../proof_graph_analyzer/merge_generator $1 "./${FILENAME}.out" INTERMEDIATE_FLIPS MAX_FLIPS $2
 
 
