@@ -26,9 +26,8 @@ fi
 
 # run instance
 runinstance() {
-	FILENAME=$1 | rev | cut -d "/" -f 1 | rev
-	../../../proof_graph_analyzer/merge_generator $1 "./${FILENAME}.out" INTERMEDIATE_FLIPS MAX_FLIPS $2
-
+	FILENAME=$( echo "running merge_generator for $1" | rev | cut -d "/" -f 1 | rev )
+	../../../proof_graph_analyzer/merge_generator $1 "$1.out" INTERMEDIATE_FLIPS MAX_FLIPS $2
 
 	echo "running merge_generator for $1"
 }
