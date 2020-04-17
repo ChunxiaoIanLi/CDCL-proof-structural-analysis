@@ -54,7 +54,7 @@ runinstance() {
 	
 	# rename instances
 	echo "ls \"${OUT_SUB_DIR}\" | grep \"${OUTPUT_INSTANCE_PREFIX}\" | while read -r CNF_FILE ; do" >> ${JOB_SCRIPT}
-	echo "	mv \"\${CNF_FILE}\" \"\${CNF_FILE#${OUTPUT_INSTANCE_PREFIX}}.cnf\"" >> ${JOB_SCRIPT}
+	echo "	mv \"${OUT_SUB_DIR}/\${CNF_FILE}\" \"${OUT_SUB_DIR}/\${CNF_FILE#${OUTPUT_INSTANCE_PREFIX}}.cnf\"" >> ${JOB_SCRIPT}
 	echo "done" >> ${JOB_SCRIPT}
 
 	# queue job
