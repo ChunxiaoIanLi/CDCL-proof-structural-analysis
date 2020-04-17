@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 TEMP_FILE="instances.tmp"
 FAIL_FILE="error.csv"
 
