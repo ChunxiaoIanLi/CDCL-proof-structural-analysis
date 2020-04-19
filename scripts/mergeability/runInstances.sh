@@ -40,33 +40,7 @@ runinstance() {
 
 shopt -s extglob
 
-INSTANCE_TYPES=("medium" "powerlaw" "uniform")
-
-# iterate over all ratios
-ls "${MAIN_DIR}" | grep "ratio" | while read -r INNER ; do
-	SUB_DIR="${MAIN_DIR}/${INNER}/instances"
-
-	# iterate over all instance types
-	for INSTANCE_TYPE in "${INSTANCE_TYPES[@]}"; do
-		SUBSUB_DIR="${SUB_DIR}/${INSTANCE_TYPE}"
-	
-		# iterate over all base instances
-		if [[ -r "${SUBSUB_DIR}" ]]; then
-			ls "${SUBSUB_DIR}" | while read -r BASE_INSTANCE ; do
-				SUBSUBSUB_DIR="${SUBSUB_DIR}/${BASE_INSTANCE}"
-
-			# iterate over all instances
-			if [[ -r "${SUBSUBSUB_DIR}" ]]; then
-				ls "${SUBSUBSUB_DIR}" | grep ".cnf" | while read -r FILE ; do
-					ABS_FILE="${SUBSUBSUB_DIR}/${FILE}"
-					runinstance "${ABS_FILE}"
-				done
-			else
-				echo "Could not read directory ${SUBSUBSUB_DIR}"
-			fi
-			done
-		else
-			echo "Could not read directory ${SUBSUB_DIR}"
-		fi
-	done
+# iterate over all CNF files
+find ${MAIN_DIR} -name '*.cnf' | while read -r CNF_FILE ; do
+	runinstance "${CNF_FILE}"
 done
