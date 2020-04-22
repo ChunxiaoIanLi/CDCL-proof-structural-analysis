@@ -1,7 +1,7 @@
 #!/bin/sh
 
 SHARCNET_ACCOUNT_NAME="vganesh"
-SHARCNET_TIMEOUT="01:00:00"
+SHARCNET_TIMEOUT="00:00:5000"
 SHARCNET_MEMORY="10G"
 
 # validate input
@@ -15,7 +15,7 @@ SAT_SOLVER="$2"
 
 # run merge instances
 runinstance() {
-  INSTANCE_NAME="${1%.cnf}"
+	INSTANCE_NAME="${1%.cnf}"
 	echo "Queuing SAT solving for ${1}"
 
 	# create script to generate merge instances

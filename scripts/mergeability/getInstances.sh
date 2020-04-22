@@ -32,37 +32,31 @@ fi
 
 # echo "ratio, instance type, instance id, cpu time"
 
-INSTANCE_TYPES=("medium" "powerlaw" "uniform")
-
 # iterate over all ratios
-ls "${MAIN_DIR}" | grep "ratio" | while read -r INNER ; do
-	SUB_DIR="${MAIN_DIR}/${INNER}/results"
 
-	# iterate over all instance types
-	for INSTANCE_TYPE in "${INSTANCE_TYPES[@]}"; do
-		SUBSUB_DIR="${SUB_DIR}/${INSTANCE_TYPE}"
+BASE_DIR="${MAIN_DIR%/ratio*}"
+
+find ${MAIN_DIR} -name '*.log' | while read -r ABS_FILE ; do
+	REL_FILE="${ABS_FILE#*/ratio}"
+	RATIO=${REL_FILE%%/*}
+	REL_FILE="${REL_FILE#${RATIO}/results/}"
+	INSTANCE_TYPE=${REL_FILE%%/*}
+	REL_FILE="${REL_FILE#${INSTANCE_TYPE}/}"
+	INSTANCE_ID="${REL_FILE%.log}"
 	
-		# iterate over all instances
-		if [[ -r "${SUBSUB_DIR}" ]]; then
-			ls "${SUBSUB_DIR}" | while read -r FILE ; do
-				ABS_FILE="${SUBSUB_DIR}/${FILE}"
-				if [[ -r ${ABS_FILE} ]]; then
-					CPU_TIME=$(cat ${ABS_FILE} | grep 'CPU time')
-					CPU_TIME=$(echo "${CPU_TIME#*: }")
-					CPU_TIME=$(echo "${CPU_TIME% s}")
-					echo "${INNER#ratio}, ${INSTANCE_TYPE}, ${FILE%.log}, ${CPU_TIME}" >> ${TEMP_FILE}
-				else
-					echo "${INNER#ratio}, ${INSTANCE_TYPE}, ${FILE%.log}" >> ${FAIL_FILE}
-					echo "Could not read file ${ABS_FILE}"
-				fi
-			done
-		else
-			echo "${INNER}, ${INSTANCE_TYPE}" >> ${FAIL_FILE}
-			echo "Could not read directory ${SUBSUB_DIR}"
-		fi
-	done
+	if [[ -r ${ABS_FILE} ]]; then
+		CPU_TIME=$(cat ${ABS_FILE} | grep 'CPU time')
+		CPU_TIME="${CPU_TIME#*: }"
+		CPU_TIME="${CPU_TIME% s}"
+		IS_SAT=$(cat ${ABS_FILE} | grep 'SATISFIABLE')
+
+		echo "${RATIO}, ${INSTANCE_TYPE}, ${INSTANCE_ID}, ${CPU_TIME}, ${IS_SAT}" >> ${TEMP_FILE}
+	else
+		echo "${RATIO}, ${INSTANCE_TYPE}, ${INSTANCE_ID}" >> ${FAIL_FILE}
+		echo "Could not read file ${ABS_FILE}"
+	fi
 done
 
 # sort data
-sort -t ',' -k1,1n -k2,2 -k4,4n -k3,3n < ${TEMP_FILE} >> ${OUT_FILE}
+sort -t ',' -k1,1 -k2,2 -k4,4n -k3,3n < ${TEMP_FILE} >> ${OUT_FILE}
 rm ${TEMP_FILE}
