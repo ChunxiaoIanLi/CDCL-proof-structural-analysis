@@ -2,7 +2,7 @@
 
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT="00:00:5000"
-SHARCNET_MEMORY="10G"
+SHARCNET_MEMORY="5G"
 
 # validate input
 if [[ $# -ne 2 ]]; then
