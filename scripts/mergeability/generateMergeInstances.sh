@@ -3,12 +3,15 @@
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT="00:10:00"
 SHARCNET_MEMORY="5G"
+TEMP_FILE="unsat_instances.tmp"
 
 INTERMEDIATE_FLIPS=5
 MAX_FLIPS=100
 
 PREV_TYPE=""
 COUNT=0
+
+RANDOMIZE_INSTANCES="TRUE"
 
 # buffer for holding the last k instances
 BUFFER=()
@@ -30,6 +33,9 @@ if [[ ! -r ${INSTANCES_FILE} ]]; then
 	echo "Could not read input file: ${INSTANCES_FILE}"
 	exit 1
 fi
+
+# filter out satisfiable instances
+grep "UNSATISFIABLE" "${INSTANCES_FILE}" > "${TEMP_FILE}"
 
 # generate merge instances
 runinstance() {
@@ -83,21 +89,34 @@ outputbuffer() {
 }
 
 # generate merge instances
-while read LINE; do
-	ARRAY=(${LINE})
-	RATIO=${ARRAY[0]%,*}
-	TYPE=${ARRAY[1]%,*}
-	FILE=${ARRAY[2]%,*}
-	TIME=${ARRAY[3]%,*}
-	IS_SAT=${ARRAY[4]%,*}
-	BASE_FILE_NAME="ratio${RATIO}/instances/${TYPE}/${FILE}"
 
-	# only generate merge instances for UNSAT instances
-	if [[ ${IS_SAT} != "SATISFIABLE" ]]; then
+# select instances uniformly at random
+if [[ ${RANDOMIZE_INSTANCES} == "TRUE" ]]; then
+	shuf -n ${NUM_TO_EXECUTE} "${TEMP_FILE}" | while read LINE; do
+		ARRAY=(${LINE})
+		RATIO=${ARRAY[0]%,*}
+		TYPE=${ARRAY[1]%,*}
+		FILE=${ARRAY[2]%,*}
+		TIME=${ARRAY[3]%,*}
+		BASE_FILE_NAME="ratio${RATIO}/instances/${TYPE}/${FILE}"
+		
+		runinstance ${BASE_FILE_NAME}
+	done
+
+# pick n easiest and n hardest instances
+else
+	while read LINE; do
+		ARRAY=(${LINE})
+		RATIO=${ARRAY[0]%,*}
+		TYPE=${ARRAY[1]%,*}
+		FILE=${ARRAY[2]%,*}
+		TIME=${ARRAY[3]%,*}
+		BASE_FILE_NAME="ratio${RATIO}/instances/${TYPE}/${FILE}"
+	
+		# only generate merge instances for UNSAT instances
 		if [[ "${RATIO}/${TYPE}" != ${PREV_TYPE} ]]; then
 			outputbuffer
-
-			# reset type and count
+				# reset type and count
 			PREV_TYPE="${RATIO}/${TYPE}"
 			COUNT=0
 		fi
@@ -111,7 +130,10 @@ while read LINE; do
 		INDEX=$((COUNT % NUM_TO_EXECUTE))
 		BUFFER[${INDEX}]=${BASE_FILE_NAME}
 		COUNT=$((COUNT + 1))
-	fi
-done < ${INSTANCES_FILE}
 
-outputbuffer
+	done < ${TEMP_FILE}
+
+	outputbuffer
+fi
+
+rm ${TEMP_FILE}
