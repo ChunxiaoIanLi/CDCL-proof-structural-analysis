@@ -89,25 +89,29 @@ while read LINE; do
 	TYPE=${ARRAY[1]%,*}
 	FILE=${ARRAY[2]%,*}
 	TIME=${ARRAY[3]%,*}
+	IS_SAT=${ARRAY[4]%,*}
 	BASE_FILE_NAME="ratio${RATIO}/instances/${TYPE}/${FILE}"
 
-	if [[ "${RATIO}/${TYPE}" != ${PREV_TYPE} ]]; then
-		outputbuffer
+	# only generate merge instances for UNSAT instances
+	if [[ ${IS_SAT} != "SATISFIABLE" ]]; then
+		if [[ "${RATIO}/${TYPE}" != ${PREV_TYPE} ]]; then
+			outputbuffer
 
-		# reset type and count
-		PREV_TYPE="${RATIO}/${TYPE}"
-		COUNT=0
+			# reset type and count
+			PREV_TYPE="${RATIO}/${TYPE}"
+			COUNT=0
+		fi
+	
+		# output easy instances
+		if [[ $COUNT -lt ${NUM_TO_EXECUTE} ]]; then
+			runinstance ${BASE_FILE_NAME}
+		fi
+	
+		# add CNF to buffer
+		INDEX=$((COUNT % NUM_TO_EXECUTE))
+		BUFFER[${INDEX}]=${BASE_FILE_NAME}
+		COUNT=$((COUNT + 1))
 	fi
-
-	# output easy instances
-	if [[ $COUNT -lt ${NUM_TO_EXECUTE} ]]; then
-		runinstance ${BASE_FILE_NAME}
-	fi
-
-	# add CNF to buffer
-	INDEX=$((COUNT % NUM_TO_EXECUTE))
-	BUFFER[${INDEX}]=${BASE_FILE_NAME}
-	COUNT=$((COUNT + 1))
 done < ${INSTANCES_FILE}
 
 outputbuffer
