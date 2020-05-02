@@ -6,8 +6,8 @@ SHARCNET_MEMORY="5G"
 
 
 
-if [[ $# -ne 3 ]]; then
-	echo "Usage: $0 <DIRECTORY> <MERGE_COMPILED> <COMMUNITY_FILE>"
+if [[ $# -ne 2 ]]; then
+	echo "Usage: $0 <DIRECTORY> <MERGE_COMPILED>"
 	exit 1
 fi
 
