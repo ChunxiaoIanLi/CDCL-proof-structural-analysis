@@ -16,7 +16,7 @@ MERGE_COMPILED="$2"
 
 
 runinstance() {
-	LINE=($(head -n 1 ${1}))
+	LINE=($(grep "p cnf" ${1} | head -n 1))
 	NUMVARS=${LINE[2]}
 	COMM_TEMP="${INSTANCE_NAME}_comm"
 	COUNT=1
