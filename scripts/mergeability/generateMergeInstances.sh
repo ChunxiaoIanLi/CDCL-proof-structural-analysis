@@ -34,8 +34,8 @@ if [[ ! -r ${INSTANCES_FILE} ]]; then
 	exit 1
 fi
 
-# filter out satisfiable instances
-grep "UNSATISFIABLE" "${INSTANCES_FILE}" > "${TEMP_FILE}"
+# filter incomplete instances
+grep "SAT" "${INSTANCES_FILE}" > "${TEMP_FILE}"
 
 # generate merge instances
 runinstance() {
@@ -56,7 +56,7 @@ runinstance() {
 
 	# generate merge instances
 	OUTPUT_INSTANCE_PREFIX="outputInstance"
-	echo "${MERGE_GENERATOR} \"${MAIN_DIR}/${1}.cnf\" \"${OUT_DIR}/${1}/${OUTPUT_INSTANCE_PREFIX}\" \"${INTERMEDIATE_FLIPS}\" \"${MAX_FLIPS}\" 0" >> ${JOB_SCRIPT}
+	echo "${MERGE_GENERATOR} \"${MAIN_DIR}/${1}.cnf\" \"${OUT_DIR}/${1}/${OUTPUT_INSTANCE_PREFIX}\" \"${INTERMEDIATE_FLIPS}\" \"${MAX_FLIPS}\" 1" >> ${JOB_SCRIPT}
 	
 	# rename instances
 	echo "ls \"${OUT_SUB_DIR}\" | grep \"${OUTPUT_INSTANCE_PREFIX}\" | while read -r CNF_FILE ; do" >> ${JOB_SCRIPT}
