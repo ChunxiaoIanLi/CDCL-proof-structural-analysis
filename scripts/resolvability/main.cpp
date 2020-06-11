@@ -12,29 +12,44 @@ static int readClauses(std::vector<std::vector<int>>& clauses, std::ifstream& fi
 
 	// Read CNF header
 	bool gotHeader = false;
+	int numVars = 0, numClauses = 0;
 	while (!gotHeader) {
 		file.getline(buffer, MAX_LINE_SIZE);
 		if (file.bad()) return 1;
-		std::string bufferStr(buffer);
-		if (bufferStr.size() == 0) continue; // Skip empty lines
+		if (buffer[0] == 0) continue; // Skip empty lines
 
-		std::stringstream line(bufferStr);
+		std::stringstream line(buffer);
 		char firstChar = 0;
-		line >> firstChar;
-		if (firstChar == 'c') continue;	// Handle comments
+		line >> firstChar; if (line.bad()) return 1;
+		if (firstChar == 'c') continue;	// Skip comments
 		if (firstChar != 'p') {
-			std::cerr << "Could not find header line" << std::endl;
+			std::cerr << "Invalid header line" << std::endl;
 			return 1;
 		}
 
+		std::string cnfString;
+		line >> cnfString; if (line.bad()) return 1;
+		if (cnfString != "cnf") {
+			std::cerr << "Invalid header line" << std::endl;
+		}
+		line >> numVars >> numClauses; if (line.bad()) return 1;
+		gotHeader = true;
 	}
 
+	std::cout << numVars << " variables and " << numClauses << " clauses" << std::endl;
+
 	// Read clauses
-	while (file.good()) {
-		int var = 0;
-		file >> var;
+	while (file.good() && !file.eof()) {
+		file.getline(buffer, MAX_LINE_SIZE);
 		if (file.bad()) return 1;
-		std::cout << var << std::endl;
+		if (buffer[0] == 0) continue; // Skip empty lines
+	
+		std::stringstream line(buffer);
+		int var = 0;
+		while (line.good()) {
+			line >> var; if (line.bad()) return 1;
+			std::cout << var << std::endl;
+		}
 	}
 	return 0;
 }
