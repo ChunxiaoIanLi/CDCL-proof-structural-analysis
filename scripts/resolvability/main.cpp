@@ -6,8 +6,8 @@
 #include <vector>
 
 #define MAX_LINE_SIZE 2048
-#define RESOLVABLE_SHIFT 1
-#define MERGEABLE_SHIFT 2
+#define RESOLVABLE_SHIFT 0
+#define MERGEABLE_SHIFT 1
 #define RESOLVABLE_MASK (0x1 << RESOLVABLE_SHIFT)
 #define MERGEABLE_MASK (0x1 << MERGEABLE_SHIFT)
 
@@ -66,35 +66,37 @@ static int readClauses(std::vector<std::vector<int>>& clauses, std::ifstream& fi
 	return 0;
 }
 
-// O(n) in size of clauses
-// Resolvable if there is exactly 1 resolving literal
-// Mergeable if there is at least 1 common literal AND the pair is resolvable
-static int getResolvable(const std::vector<int>& c1, const std::vector<int>& c2) {
-	int resolvable = 0, mergeable = 0;
-	std::set<int> found;
-	for (unsigned int i = 0; i < c1.size(); ++i) {
-		found.insert(c1[i]);
-	}
-
-	for (unsigned int i = 0; i < c2.size(); ++i) {
-		if (found.find(-c2[i]) != found.end()) {
-			if (resolvable) return 0; // Not mergeable and not resolvable if there are multiple resolving literals
-			resolvable = 1;
-		}
-		if (found.find(+c2[i]) != found.end()) {
-			mergeable = 1;
-		}
-	}
-
-	return (resolvable << RESOLVABLE_SHIFT) || (mergeable << MERGEABLE_SHIFT);
-}
-
-static int countResolvable(int& numResolvable, int& numMergeable, const std::vector<std::vector<int>>& clauses) {
+static int countResolvable(long& numResolvable, long& numMergeable, const std::vector<std::vector<int>>& clauses) {
 	for (unsigned int i = 0; i < clauses.size(); ++i) {
+		// Initialize set for checking resolvability
+		std::set<int> found;
+		for (unsigned int c_i = 0; c_i < clauses[i].size(); ++c_i) {
+			found.insert(clauses[i][c_i]);
+		}
+
+		// Compare every clause with every other clause
 		for (unsigned int j = i + 1; j < clauses.size(); ++j) {
-			int val = getResolvable(clauses[i], clauses[j]);
-			if (val & RESOLVABLE_MASK) ++numResolvable;
-			if (val & MERGEABLE_MASK) ++numMergeable;
+			bool resolvable = false;
+			long tmpNumMergeable = 0;
+			
+			// Check for resolvable/mergable clauses
+			for (unsigned int c_j = 0; c_j < clauses[j].size(); ++c_j) {
+				if (found.find(-clauses[j][c_j]) != found.end()) {
+					if (resolvable) {
+						resolvable = false;
+						break;
+					}
+					resolvable = true;
+				} else if (found.find(clauses[j][c_j]) != found.end()) {
+					++tmpNumMergeable;
+				}
+			}
+
+			// Update counts
+			if (resolvable) {
+				numResolvable += 1;
+				numMergeable  += tmpNumMergeable;
+			}
 		}
 	}
 
@@ -132,7 +134,7 @@ int main (const int argc, const char* const * argv) {
 		}
 
 		// Calculate num resolvable and num mergeable
-		int numResolvable = 0, numMergeable = 0;
+		long numResolvable = 0, numMergeable = 0;
 		if (countResolvable(numResolvable, numMergeable, clauses)) {
 			std::cerr << "Error while counting num resolvable for: " << inputFileStr << std::endl;
 			return 1;
