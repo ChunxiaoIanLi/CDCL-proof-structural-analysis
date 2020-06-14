@@ -121,7 +121,7 @@ int main (const int argc, const char* const * argv) {
 		// Open file
 		const std::string inputFileStr(argv[argIndex]);
 		std::ifstream inputFile(inputFileStr);
-		if (inputFile.bad()) {
+		if (!inputFile.is_open()) {
 			std::cerr << "Error while opening: " << inputFileStr << std::endl;
 			return 1;
 		}
