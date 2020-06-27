@@ -1,4 +1,6 @@
+#include <algorithm>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <set>
 #include <sstream>
@@ -12,12 +14,11 @@
 #define MERGEABLE_MASK (0x1 << MERGEABLE_SHIFT)
 
 // Read clauses from file
-static int readClauses(std::vector<std::vector<int>>& clauses, std::ifstream& file) {
+static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int& numClauses, std::ifstream& file) {
 	char buffer[MAX_LINE_SIZE];
 
 	// Read CNF header
 	bool gotHeader = false;
-	int numVars = 0, numClauses = 0;
 	while (!gotHeader) {
 		file.getline(buffer, MAX_LINE_SIZE);
 		if (file.bad()) return 1;
@@ -66,7 +67,7 @@ static int readClauses(std::vector<std::vector<int>>& clauses, std::ifstream& fi
 	return 0;
 }
 
-static int countResolvable(long& numResolvable, long& numMergeable, const std::vector<std::vector<int>>& clauses) {
+static int countResolvable(int& numResolvable, int& numMergeable, const std::vector<std::vector<int>>& clauses) {
 	for (unsigned int i = 0; i < clauses.size(); ++i) {
 		// Initialize set for checking resolvability
 		std::set<int> found;
@@ -79,7 +80,7 @@ static int countResolvable(long& numResolvable, long& numMergeable, const std::v
 			bool resolvable = false;
 			long tmpNumMergeable = 0;
 			
-			// Check for resolvable/mergable clauses
+			// Check for resolvable/mergeable clauses
 			for (unsigned int c_j = 0; c_j < clauses[j].size(); ++c_j) {
 				if (found.find(-clauses[j][c_j]) != found.end()) {
 					if (resolvable) {
@@ -103,19 +104,55 @@ static int countResolvable(long& numResolvable, long& numMergeable, const std::v
 	return 0;
 }
 
+static int computeDegreeVector(std::vector<int>& degreeVector, std::vector<std::vector<int>>& clauses) {
+	// Iterate through every variable of every clause
+	for (const std::vector<int>& clause : clauses) {
+		for (int x : clause) {
+			// Increment corresponding variable in degree vector
+			++degreeVector[std::abs(x) - 1];
+		}
+	}
+
+	std::sort(degreeVector.rbegin(), degreeVector.rend());
+
+	return 0;
+}
+
+static int writeFile(const std::string& outputFileStr, std::function<int(std::ofstream&)> writerFunc) {
+	std::ofstream outputFile(outputFileStr);
+	if (!outputFile.is_open()) {
+		std::cerr << "Error while opening: " << outputFileStr << std::endl;
+		return 1;
+	}
+
+	return writerFunc(outputFile);
+}
+
+static int writeCVR(std::ofstream& outFile, double cvr) {
+	outFile << cvr << std::endl;
+	return 0;
+}
+
+static int writeResolvability(std::ofstream& outFile, int numResolvable, int numMergeable) {
+	outFile << numResolvable << "," << numMergeable << std::endl;
+	return 0;
+}
+
+static int writeDegreeVector(std::ofstream& outFile, std::vector<int>& degreeVector) {
+	for (unsigned int i = 0; i < degreeVector.size(); ++i) {
+		outFile << i + 1 << "," << degreeVector[i] << std::endl;
+	}
+	return 0;
+}
+
+using namespace std::placeholders;
 int main (const int argc, const char* const * argv) {
-	if (argc < 3) {
-		std::cerr << "Usage: " << argv[0] << " <OUTPUT> <INPUT [INPUTS...]>" << std::endl;
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << " <INPUT [INPUTS...]>" << std::endl;
 		return 1;
 	}
 
 	int argIndex = 1;
-	const std::string outputFileStr(argv[argIndex++]);
-	std::ofstream outputFile(outputFileStr);
-	if (outputFile.bad()) {
-		std::cerr << "Error while opening: " << outputFileStr << std::endl;
-		return 1;
-	}
 
 	while (argIndex != argc) {
 		// Open file
@@ -127,22 +164,34 @@ int main (const int argc, const char* const * argv) {
 		}
 
 		// Read clauses from file
+		int numVars = 0, numClauses = 0;
 		std::vector<std::vector<int>> clauses;
-		if (readClauses(clauses, inputFile)) {
+		if (readClauses(clauses, numVars, numClauses, inputFile)) {
 			std::cerr << "Error while reading: " << inputFileStr << std::endl;
 			return 1;
 		}
 
+		// Calculate CVR
+		double cvr = numClauses / static_cast<double>(numVars);
+
 		// Calculate num resolvable and num mergeable
-		long numResolvable = 0, numMergeable = 0;
+		int numResolvable = 0, numMergeable = 0;
 		if (countResolvable(numResolvable, numMergeable, clauses)) {
 			std::cerr << "Error while counting num resolvable for: " << inputFileStr << std::endl;
 			return 1;
 		}
 
+		// Calculate degree vector
+		std::vector<int> degreeVector(numVars);
+		if (computeDegreeVector(degreeVector, clauses)) {
+			std::cerr << "Error while computing degree vector" << std::endl;
+			return 1;
+		}
+
 		// Write results to file
-		std::cout  << inputFileStr << ',' << numResolvable << ',' << numMergeable << ',' << std::endl;
-		outputFile << inputFileStr << ',' << numResolvable << ',' << numMergeable << ',' << std::endl;
+		writeFile(inputFileStr + ".cvr", std::bind(writeCVR,           _1, cvr));
+		writeFile(inputFileStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+		writeFile(inputFileStr + ".dv",  std::bind(writeDegreeVector,  _1, degreeVector));
 
 		++argIndex;
 	}
