@@ -175,7 +175,7 @@ int main (const int argc, const char* const * argv) {
 
 		// Calculate and output CVR
 		{
-			double cvr;
+			double cvr = 0;
 			computeCVR(cvr, numClauses, numVars);
 			writeFile(inputFileStr + ".cvr", std::bind(writeCVR, _1, cvr));
 		}
