@@ -158,6 +158,7 @@ static int writeDegreeVector(std::ofstream& outFile, std::vector<int>& degreeVec
 
 using namespace std::placeholders;
 int main (const int argc, const char* const * argv) {
+	// Validate input
 	if (argc < 2) {
 		std::cerr << "Usage: " << argv[0] << " <INPUT [INPUTS...]>" << std::endl;
 		return 1;
@@ -173,19 +174,25 @@ int main (const int argc, const char* const * argv) {
 		if (readClauses(clauses, numVars, numClauses, inputFileStr)) return 1;
 
 		// Calculate and output CVR
-		double cvr;
-		computeCVR(cvr, numClauses, numVars);
-		writeFile(inputFileStr + ".cvr", std::bind(writeCVR, _1, cvr));
+		{
+			double cvr;
+			computeCVR(cvr, numClauses, numVars);
+			writeFile(inputFileStr + ".cvr", std::bind(writeCVR, _1, cvr));
+		}
 
 		// Calculate and output degree vector
-		std::vector<int> degreeVector(numVars);
-		computeDegreeVector(degreeVector, clauses);
-		writeFile(inputFileStr + ".dv",  std::bind(writeDegreeVector, _1, degreeVector));
+		{
+			std::vector<int> degreeVector(numVars);
+			computeDegreeVector(degreeVector, clauses);
+			writeFile(inputFileStr + ".dv",  std::bind(writeDegreeVector, _1, degreeVector));
+		}
 
 		// Calculate and output num resolvable and num mergeable
-		int numResolvable = 0, numMergeable = 0;
-		computeResolvable(numResolvable, numMergeable, clauses);
-		writeFile(inputFileStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+		{
+			int numResolvable = 0, numMergeable = 0;
+			computeResolvable(numResolvable, numMergeable, clauses);
+			writeFile(inputFileStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+		}
 
 		++argIndex;
 	}
