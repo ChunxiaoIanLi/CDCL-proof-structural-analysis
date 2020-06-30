@@ -80,7 +80,7 @@ static void computeCVR(double& cvr, int numClauses, int numVars) {
 
 // Resolvability computation
 // O(m^2 n log(n))
-static int computeResolvable(int& numResolvable, int& numMergeable, const std::vector<std::vector<int>>& clauses) {
+static int computeResolvable1(int& numResolvable, int& numMergeable, const std::vector<std::vector<int>>& clauses) {
 	for (unsigned int i = 0; i < clauses.size(); ++i) {
 		// Initialize set for checking resolvability
 		// O(n log(n))
@@ -121,7 +121,7 @@ static int computeResolvable(int& numResolvable, int& numMergeable, const std::v
 	return 0;
 }
 
-// Optimization of resolvability computation
+// Optimization of resolvability computation - this is over-counting! D:
 // Still O(m^2 n log(n)), but faster than computeResolvable
 static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector<std::vector<int>>& clauses) {
 	const auto variableComparator = [](int a, int b) {
@@ -152,6 +152,9 @@ static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector
 			found.insert(clauses[i][c_i]);
 		}
 
+		// Initialize set for tracking clauses which have already been checked
+		std::set<int> checked;
+
 		// For each variable in the clause, check for other clauses which resolve on the variable
 		for (unsigned int c_i = 0; c_i < clauses[i].size(); ++c_i) {
 			// Find the last possibly resolvable clause ahead of the current clause
@@ -159,10 +162,10 @@ static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector
 			// on the search range.
 			// O(n + log(m))
 			const std::vector<int> toFind = { clauses[i][c_i] }; // Wrap the target variable in a clause for comparison
-			const auto resolvableUpperBound = std::upper_bound(clauses.begin() + i, clauses.end(), toFind, clauseComparator);
+			const auto resolvableUpperBound = std::upper_bound(clauses.begin() + i + 1, clauses.end(), toFind, clauseComparator);
 
 			// Find all resolvable clauses in the range of candidates
-			// O(m n log(n))
+			// O(m (log(m) + n log(n)))
 			for (auto candidateClauseItr = clauses.begin(); candidateClauseItr != resolvableUpperBound; ++candidateClauseItr) {
 				const std::vector<int>& candidateClause = *candidateClauseItr;				
 
@@ -170,6 +173,12 @@ static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector
 				// Since variables are sorted, we can skip clauses whose maximum variables are smaller than the target variable
 				// O(1)
 				if (candidateClause.back() < std::abs(clauses[i][c_i])) continue;
+
+				// Check whether the candidate clause has already been checked
+				// O(log(m))
+				const int curIndex = candidateClauseItr - clauses.begin(); 
+				if (checked.find(curIndex) != checked.end()) continue;
+				checked.insert(curIndex);
 
 				// Check if the target variable is in the candidate clause
 				// Since variables are sorted, the first variable less than or equal to the target variable is a lower bound
@@ -282,13 +291,13 @@ int main (const int argc, const char* const * argv) {
 		// Calculate and output num resolvable and num mergeable
 		{
 			int numResolvable = 0, numMergeable = 0;
-			bool useNaiveAlg = false;
-			if (useNaiveAlg) {
-				computeResolvable(numResolvable, numMergeable, clauses);
-			} else {
-				computeResolvable2(numResolvable, numMergeable, clauses);
+			int algNum = 2;
+			switch (algNum) {
+				case  2: computeResolvable2(numResolvable, numMergeable, clauses); break; 
+				default: computeResolvable1(numResolvable, numMergeable, clauses); break;
 			}
-			writeFile(inputFileStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+
+			writeFile(inputFileStr + ".rvm" + ((algNum == 1) ? std::string() : std::to_string(algNum)), std::bind(writeResolvability, _1, numResolvable, numMergeable));
 		}
 
 		++argIndex;
