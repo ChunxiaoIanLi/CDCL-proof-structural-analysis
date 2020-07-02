@@ -172,7 +172,7 @@ static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector
 				// Check if the desired variable is potentially in the candidate clause
 				// Since variables are sorted, we can skip clauses whose maximum variables are smaller than the target variable
 				// O(1)
-				if (candidateClause.back() < std::abs(clauses[i][c_i])) continue;
+				if (std::abs(candidateClause.back()) < std::abs(clauses[i][c_i])) continue;
 
 				// Check whether the candidate clause has already been checked
 				// O(log(m))
