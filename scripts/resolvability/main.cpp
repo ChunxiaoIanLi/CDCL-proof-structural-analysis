@@ -216,6 +216,86 @@ static int computeResolvable2(int& numResolvable, int& numMergeable, std::vector
 	return 0;
 }
 
+// Attempt at optimizing resolvability computation - this is asymptotically slower?
+// O(m^2 n^2 log(n)) 
+static int computeResolvable3(int& numResolvable, int& numMergeable, std::vector<std::vector<int>>& clauses, int numVariables) {
+	const auto variableComparator = [](int a, int b) {
+		return std::abs(a) < std::abs(b);
+	};
+
+	// Sort variables
+	// O(m n log(n))
+	for (std::vector<int>& clause : clauses) {
+		std::sort(clause.begin(), clause.end(), variableComparator);
+	}
+
+	// Generate clause lookup table
+	// O(m n)
+	std::vector<std::vector<unsigned int>> posClauseIndices(numVariables);
+	std::vector<std::vector<unsigned int>> negClauseIndices(numVariables);
+	for (unsigned int i = 0; i < clauses.size(); ++i) {
+		for (unsigned int c_i = 0; c_i < clauses[i].size(); ++c_i) {
+			const int var = clauses[i][c_i];
+			if (var > 0) { // The variable should never be zero
+				posClauseIndices[+var - 1].emplace_back(i);	
+			} else {
+				negClauseIndices[-var - 1].emplace_back(i);
+			}
+		}
+	}
+
+	// Find all clauses which resolve on a variable
+	// O(m^2 n^2 log(n))
+	for (int i = 0; i < numVariables; ++i) {
+		const std::vector<unsigned int>& posClauses = posClauseIndices[i];
+		const std::vector<unsigned int>& negClauses = negClauseIndices[i];
+		
+		// Check for clauses which resolve on the variable
+		// O(m^2 n log(n))
+		for (unsigned int c_i : posClauses) {
+			const std::vector<int>& posClause = clauses[c_i];
+
+			// Initialize set for checking resolvability
+			// O(n log(n))
+			std::set<int> found;
+			for (int var : posClause) {
+				found.insert(var);
+			}
+
+			// Check if any of the negative clause resolves with the positive clause
+			// O(m n log(n))
+			for (unsigned int c_j : negClauses) {
+				const std::vector<int>& negClause = clauses[c_j];
+
+				// Check for resolvable/mergeable clauses
+				// O(n log(n))
+				bool resolvable = false;
+				int tmpNumMergeable = 0;
+				for (unsigned int k = 0; k < negClause.size(); ++k) {
+					if (found.find(-negClause[k]) != found.end()) {
+						if (resolvable) {
+							resolvable = false;
+							break;
+						}
+						resolvable = true;
+					} else if (found.find(negClause[k]) != found.end()) {
+						++tmpNumMergeable;
+					}
+				}
+
+				// Update counts
+				// O(1)
+				if (resolvable) {
+					numResolvable += 1;
+					numMergeable  += tmpNumMergeable;
+				}
+			}
+		}
+	}
+
+	return 0;
+} 
+
 static int computeDegreeVector(std::vector<int>& degreeVector, std::vector<std::vector<int>>& clauses) {
 	// Iterate through every variable of every clause
 	for (const std::vector<int>& clause : clauses) {
@@ -291,10 +371,11 @@ int main (const int argc, const char* const * argv) {
 		// Calculate and output num resolvable and num mergeable
 		{
 			int numResolvable = 0, numMergeable = 0;
-			int algNum = 2;
+			int algNum = 3;
 			switch (algNum) {
-				case  2: computeResolvable2(numResolvable, numMergeable, clauses); break; 
-				default: computeResolvable1(numResolvable, numMergeable, clauses); break;
+				case  2: computeResolvable2(numResolvable, numMergeable, clauses);          break; 
+				case  3: computeResolvable3(numResolvable, numMergeable, clauses, numVars); break;
+				default: computeResolvable1(numResolvable, numMergeable, clauses);          break;
 			}
 
 			writeFile(inputFileStr + ".rvm" + ((algNum == 1) ? std::string() : std::to_string(algNum)), std::bind(writeResolvability, _1, numResolvable, numMergeable));
