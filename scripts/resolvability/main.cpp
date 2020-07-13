@@ -71,7 +71,7 @@ static void computeCVR(double& cvr, int numClauses, int numVars) {
 
 // Optimizing resolvability computation - this is asymptotically slower?
 // O(m^2 n^2 log(n)) 
-static int computeResolvable(long& numResolvable, long& numMergeable, std::vector<std::vector<int>>& clauses, int numVariables) {
+static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<std::vector<int>>& clauses, int numVariables) {
 	const auto variableComparator = [](int a, int b) {
 		return std::abs(a) < std::abs(b);
 	};
@@ -228,7 +228,7 @@ int main (const int argc, const char* const * argv) {
 
 		// Calculate and output num resolvable and num mergeable
 		{
-			long numResolvable = 0, numMergeable = 0;
+			long long numResolvable = 0, numMergeable = 0;
 			computeResolvable(numResolvable, numMergeable, clauses, numVars);
 			writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
 		}
