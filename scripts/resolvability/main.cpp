@@ -186,7 +186,7 @@ static void writeCVR(std::ofstream& outFile, double cvr) {
 	outFile << cvr << std::endl;
 }
 
-static void writeResolvability(std::ofstream& outFile, int numResolvable, int numMergeable) {
+static void writeResolvability(std::ofstream& outFile, long long numResolvable, long long numMergeable) {
 	outFile << numResolvable << " " << numMergeable << std::endl;
 }
 
