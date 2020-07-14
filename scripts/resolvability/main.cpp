@@ -9,7 +9,7 @@
 #include <vector>
 
 // Read clauses from file
-static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int& numClauses, int& maxClauseWidth, const std::string& inputFileStr) {
+static int readClauses(std::vector<std::vector<long long>>& clauses, long long& numVars, long long& numClauses, long long& maxClauseWidth, const std::string& inputFileStr) {
 	std::ifstream file(inputFileStr);
 	if (!file.is_open()) {
 		std::cerr << "Error while opening: " << inputFileStr << std::endl;
@@ -46,17 +46,17 @@ static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int
 	clauses.reserve(numClauses);
 
 	// Read clauses
-	std::vector<int> clause;
+	std::vector<long long> clause;
 	while (std::getline(file, lineStr)) {
 		if (lineStr.size() == 0) continue; // Skip empty lines
 	
 		std::stringstream line(lineStr);
-		int var = 0;
+		long long var = 0;
 		while (line.good()) {
 			line >> var; if (line.bad()) return 1;
 			if (var == 0) { // Clauses end upon reading zero
 				clauses.push_back(clause);
-				maxClauseWidth = std::max(maxClauseWidth, static_cast<int>(clause.size()));
+				maxClauseWidth = std::max(maxClauseWidth, static_cast<long long>(clause.size()));
 				clause.clear();
 			} else {
 				clause.push_back(var);
@@ -67,20 +67,20 @@ static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int
 }
 
 
-static void computeCVR(double& cvr, int numClauses, int numVars) {
+static void computeCVR(double& cvr, long long numClauses, long long numVars) {
 	cvr = numClauses / static_cast<double>(numVars);
 }
 
 // Optimizing resolvability computation - this is asymptotically slower?
 // O(m^2 n^2 log(n)) 
-static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<int>& mergeabilityVector, std::vector<std::vector<int>>& clauses, int numVariables) {
-	const auto variableComparator = [](int a, int b) {
+static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<long long>& mergeabilityVector, std::vector<std::vector<long long>>& clauses, long long numVariables) {
+	const auto variableComparator = [](long long a, long long b) {
 		return std::abs(a) < std::abs(b);
 	};
 
 	// Sort variables
 	// O(m n log(n))
-	for (std::vector<int>& clause : clauses) {
+	for (std::vector<long long>& clause : clauses) {
 		std::sort(clause.begin(), clause.end(), variableComparator);
 	}
 
@@ -101,26 +101,26 @@ static int computeResolvable(long long& numResolvable, long long& numMergeable, 
 
 	// Find all clauses which resolve on a variable
 	// O(m^2 n^2 log(n))
-	for (int i = 0; i < numVariables; ++i) {
+	for (long long i = 0; i < numVariables; ++i) {
 		const std::vector<unsigned int>& posClauses = posClauseIndices[i];
 		const std::vector<unsigned int>& negClauses = negClauseIndices[i];
 		
 		// Check for clauses which resolve on the variable
 		// O(m^2 n log(n))
 		for (unsigned int c_i : posClauses) {
-			const std::vector<int>& posClause = clauses[c_i];
+			const std::vector<long long>& posClause = clauses[c_i];
 
 			// Initialize set for checking resolvability
 			// O(n log(n))
-			std::set<int> found;
-			for (int var : posClause) {
+			std::set<long long> found;
+			for (long long var : posClause) {
 				found.insert(var);
 			}
 
 			// Check if any of the negative clause resolves with the positive clause
 			// O(m n log(n))
 			for (unsigned int c_j : negClauses) {
-				const std::vector<int>& negClause = clauses[c_j];
+				const std::vector<long long>& negClause = clauses[c_j];
 
 				// Check for resolvable/mergeable clauses
 				// O(n log(n))
@@ -152,10 +152,10 @@ static int computeResolvable(long long& numResolvable, long long& numMergeable, 
 	return 0;
 } 
 
-static int computeDegreeVector(std::vector<int>& degreeVector, std::vector<std::vector<int>>& clauses) {
+static int computeDegreeVector(std::vector<long long>& degreeVector, std::vector<std::vector<long long>>& clauses) {
 	// Iterate through every variable of every clause
-	for (const std::vector<int>& clause : clauses) {
-		for (int x : clause) {
+	for (const std::vector<long long>& clause : clauses) {
+		for (long long x : clause) {
 			// Increment corresponding variable in degree vector
 			++degreeVector[std::abs(x) - 1];
 		}
@@ -190,13 +190,13 @@ static void writeResolvability(std::ofstream& outFile, long long numResolvable, 
 	outFile << numResolvable << " " << numMergeable << std::endl;
 }
 
-static void writeDegreeVector(std::ofstream& outFile, std::vector<int>& degreeVector) {
+static void writeDegreeVector(std::ofstream& outFile, std::vector<long long>& degreeVector) {
 	for (unsigned int i = 0; i < degreeVector.size(); ++i) {
 		outFile << i + 1 << " " << degreeVector[i] << std::endl;
 	}
 }
 
-static void writeMergeabilityVector(std::ofstream& outFile, std::vector<int>& mergeabilityVector) {
+static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long long>& mergeabilityVector) {
 	for (unsigned int i = 0; i < mergeabilityVector.size(); ++i) {
 		outFile << i << " " << mergeabilityVector[i] << std::endl;
 	}
@@ -217,8 +217,8 @@ int main (const int argc, const char* const * argv) {
 		static const std::string CNF_EXTENSION = ".cnf";
 		const std::string inputFileStr(argv[argIndex]);
 		const std::string inputFileBaseStr = inputFileStr.substr(0, inputFileStr.size() - CNF_EXTENSION.size());
-		int numVars = 0, numClauses = 0, maxClauseWidth = 0;
-		std::vector<std::vector<int>> clauses;
+		long long numVars = 0, numClauses = 0, maxClauseWidth = 0;
+		std::vector<std::vector<long long>> clauses;
 		if (readClauses(clauses, numVars, numClauses, maxClauseWidth, inputFileStr)) return 1;
 		assert(numVars > 0);
 		assert(numClauses > 0);
@@ -234,7 +234,7 @@ int main (const int argc, const char* const * argv) {
 
 		// Calculate and output degree vector
 		{
-			std::vector<int> degreeVector(numVars);
+			std::vector<long long> degreeVector(numVars);
 			computeDegreeVector(degreeVector, clauses);
 			writeFile(inputFileBaseStr + ".dv", std::bind(writeDegreeVector, _1, degreeVector));
 		}
@@ -242,7 +242,7 @@ int main (const int argc, const char* const * argv) {
 		// Calculate and output num resolvable and num mergeable
 		{
 			long long numResolvable = 0, numMergeable = 0;
-			std::vector<int> mergeabilityVector(maxClauseWidth + 1);
+			std::vector<long long> mergeabilityVector(maxClauseWidth + 1);
 			computeResolvable(numResolvable, numMergeable, mergeabilityVector, clauses, numVars);
 			assert(numResolvable >= 0);
 			assert(numMergeable >= 0);
