@@ -9,7 +9,7 @@
 	OUTFILE="${LINE%.cnf}.cmp.sh"
 	cp sbatchBaseFile.sh "${OUTFILE}"
 	echo "#SBATCH --output=${LINE%.cnf}.cmp.log" >> "${OUTFILE}"
-	echo "/home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/scripts/resolvability/countResolvable ${LINE}" >> "${OUTFILE}"
+	echo "time /home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/scripts/resolvability/countResolvable ${LINE}" >> "${OUTFILE}"
 	chmod +x "${OUTFILE}"
 	echo "${LINE%.cnf}"
 	sbatch $OUTFILE

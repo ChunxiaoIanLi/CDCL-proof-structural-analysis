@@ -7,7 +7,7 @@ RM  = rm -rf
 WARNS = -Wall
 
 # Compiler and linker flags
-CPPFLAGS = -g -std=c++17 $(WARNS)
+CPPFLAGS = -g -O3 -std=c++17 $(WARNS)
 LDFLAGS = -s
 
 # Source files

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <assert.h>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -8,7 +9,7 @@
 #include <vector>
 
 // Read clauses from file
-static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int& numClauses, const std::string& inputFileStr) {
+static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int& numClauses, int& maxClauseWidth, const std::string& inputFileStr) {
 	std::ifstream file(inputFileStr);
 	if (!file.is_open()) {
 		std::cerr << "Error while opening: " << inputFileStr << std::endl;
@@ -55,6 +56,7 @@ static int readClauses(std::vector<std::vector<int>>& clauses, int& numVars, int
 			line >> var; if (line.bad()) return 1;
 			if (var == 0) { // Clauses end upon reading zero
 				clauses.push_back(clause);
+				maxClauseWidth = std::max(maxClauseWidth, static_cast<int>(clause.size()));
 				clause.clear();
 			} else {
 				clause.push_back(var);
@@ -71,7 +73,7 @@ static void computeCVR(double& cvr, int numClauses, int numVars) {
 
 // Optimizing resolvability computation - this is asymptotically slower?
 // O(m^2 n^2 log(n)) 
-static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<std::vector<int>>& clauses, int numVariables) {
+static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<int>& mergeabilityVector, std::vector<std::vector<int>>& clauses, int numVariables) {
 	const auto variableComparator = [](int a, int b) {
 		return std::abs(a) < std::abs(b);
 	};
@@ -123,7 +125,7 @@ static int computeResolvable(long long& numResolvable, long long& numMergeable, 
 				// Check for resolvable/mergeable clauses
 				// O(n log(n))
 				bool resolvable = false;
-				long tmpNumMergeable = 0;
+				long long tmpNumMergeable = 0;
 				for (unsigned int k = 0; k < negClause.size(); ++k) {
 					if (found.find(-negClause[k]) != found.end()) {
 						if (resolvable) {
@@ -141,6 +143,7 @@ static int computeResolvable(long long& numResolvable, long long& numMergeable, 
 				if (resolvable) {
 					numResolvable += 1;
 					numMergeable  += tmpNumMergeable;
+					++mergeabilityVector[tmpNumMergeable];
 				}
 			}
 		}
@@ -193,6 +196,12 @@ static void writeDegreeVector(std::ofstream& outFile, std::vector<int>& degreeVe
 	}
 }
 
+static void writeMergeabilityVector(std::ofstream& outFile, std::vector<int>& mergeabilityVector) {
+	for (unsigned int i = 0; i < mergeabilityVector.size(); ++i) {
+		outFile << i << " " << mergeabilityVector[i] << std::endl;
+	}
+}
+
 using namespace std::placeholders;
 int main (const int argc, const char* const * argv) {
 	// Validate input
@@ -208,14 +217,18 @@ int main (const int argc, const char* const * argv) {
 		static const std::string CNF_EXTENSION = ".cnf";
 		const std::string inputFileStr(argv[argIndex]);
 		const std::string inputFileBaseStr = inputFileStr.substr(0, inputFileStr.size() - CNF_EXTENSION.size());
-		int numVars = 0, numClauses = 0;
+		int numVars = 0, numClauses = 0, maxClauseWidth = 0;
 		std::vector<std::vector<int>> clauses;
-		if (readClauses(clauses, numVars, numClauses, inputFileStr)) return 1;
+		if (readClauses(clauses, numVars, numClauses, maxClauseWidth, inputFileStr)) return 1;
+		assert(numVars > 0);
+		assert(numClauses > 0);
+		assert(maxClauseWidth > 0);
 
 		// Calculate and output CVR
 		{
 			double cvr = 0;
 			computeCVR(cvr, numClauses, numVars);
+			assert(cvr > 0);
 			writeFile(inputFileBaseStr + ".cvr", std::bind(writeCVR, _1, cvr));
 		}
 
@@ -223,14 +236,18 @@ int main (const int argc, const char* const * argv) {
 		{
 			std::vector<int> degreeVector(numVars);
 			computeDegreeVector(degreeVector, clauses);
-			writeFile(inputFileBaseStr + ".dv",  std::bind(writeDegreeVector, _1, degreeVector));
+			writeFile(inputFileBaseStr + ".dv", std::bind(writeDegreeVector, _1, degreeVector));
 		}
 
 		// Calculate and output num resolvable and num mergeable
 		{
 			long long numResolvable = 0, numMergeable = 0;
-			computeResolvable(numResolvable, numMergeable, clauses, numVars);
+			std::vector<int> mergeabilityVector(maxClauseWidth + 1);
+			computeResolvable(numResolvable, numMergeable, mergeabilityVector, clauses, numVars);
+			assert(numResolvable >= 0);
+			assert(numMergeable >= 0);
 			writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+			writeFile(inputFileBaseStr + ".mv", std::bind(writeMergeabilityVector, _1, mergeabilityVector));
 		}
 
 		++argIndex;
