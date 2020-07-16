@@ -22,8 +22,12 @@ def fit_powerlaw(filename):
 
     plt.xlabel('Index of variable')
     plt.ylabel('# of Appearances')
-    plt.title('Heterogeneity of instance ' + filename)
-    plt.show()
+    plt.title('Heterogeneity of instance ' + filename.split('\\')[-1].split('/')[-1])
+    plt.savefig(filename + '_fitted.png')
+    # plt.show()
+
+    fitted_file = open(filename + '_fitted.log', 'w+')
+    fitted_file.write(str(x0) + " " + str(alpha) + "\n" + str(fit[1]))
 
 
 def main(argv):
