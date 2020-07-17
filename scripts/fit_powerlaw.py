@@ -14,12 +14,13 @@ def fit_powerlaw(filename):
     lines = file.readlines()
     y_data = list(map(lambda x: int(x.split(' ')[1]), lines))
     x_data = list(range(1, len(y_data) + 1))
-    plt.plot(x_data, y_data)
+    plt.plot(x_data, y_data, label='Data Points')
 
     fit = optimize.curve_fit(f, x_data, y_data)
     x0, alpha = fit[0]
-    plt.plot(x_data, f(x_data, x0, alpha))
+    plt.plot(x_data, f(x_data, x0, alpha), label='Fitted Equation')
 
+    plt.legend(loc="upper right")
     plt.xlabel('Index of variable')
     plt.ylabel('# of Appearances')
     plt.title('Heterogeneity of instance ' + filename.split('\\')[-1].split('/')[-1])
@@ -29,6 +30,8 @@ def fit_powerlaw(filename):
     fitted_file = open(filename + '_fitted.log', 'w+')
     fitted_file.write(str(x0) + " " + str(alpha) + "\n" + str(fit[1]))
 
+    plt.clf()
+
 
 def main(argv):
     if len(sys.argv) == 1:
@@ -36,12 +39,11 @@ def main(argv):
             fit_powerlaw(filename)
     elif os.path.isfile(argv[1]):
         fit_powerlaw(argv[1])
-    elif os.path.isdir(argv[1]):
-        for filename in glob.glob(argv[1]):
-            if filename.endswith('.dv'):
-                fit_powerlaw(filename)
     else:
-        print("Argument must be valid file or directory")
+        path = argv[1]
+        for filename in os.listdir(path):
+            if filename.endswith('.dv'):
+                fit_powerlaw(os.path.join(path, filename))
 
 
 if __name__ == "__main__":
