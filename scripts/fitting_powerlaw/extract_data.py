@@ -12,7 +12,7 @@ def main(argv):
         if filename.endswith('_fitted.log'):
             fitted_file = open(os.path.join(path, filename))
             fitted_lines = fitted_file.readlines()
-            equation = fitted_lines[0].split(' ')[0] + '*(x^' + fitted_lines[0].split()[1] + ')'
+            equation = fitted_lines[0].split(' ')[0] + '*(x^-' + fitted_lines[0].split()[1] + ')'
             file.write(re.sub('_fitted.log', '', filename) + ', ' + equation + '\n')
 
 
