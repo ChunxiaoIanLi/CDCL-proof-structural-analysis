@@ -1,12 +1,22 @@
 #!/bin/bash
 
 # Validate input arguments
-if [[ $# -ne 1 ]]; then
-	echo "Usage: $0 <DIRECTORY>"
+# @param $1: input directory
+# @param $2: base name for the output CSV. There are 4 outputs.
+# @output <BASE_NAME>.CSV - only the outputs for the base instances
+# @output <BASE_NAME>_maplesat_preprocess.csv - only the outputs for the instances preprocessed by maplesat
+# @output <BASE_NAME>_glucose_preprocess.csv - only the outputs for the instances preprocessed by glucose
+# @output <BASE_NAME>_summary.csv
+if [[ $# -ne 2 ]]; then
+	echo "Usage: $0 <DIRECTORY> <OUTPUT_CSV_BASE_NAME>"
 	exit 1
 fi
 
 directory="${1%/}"
+output_base="${2}.csv"
+output_maplesat="${2}_maplesat_preprocess.csv"
+output_glucose="${2}_glucose_preprocess.csv"
+output_summary="${2}_summary.csv"
 
 # Get the list of all base (non-preprocessed) instances in the directory
 getBaseInstances() {
@@ -41,6 +51,8 @@ getSat() {
 fetchData() {
 	local num=$#
 	local ins=$1
+
+	# Read parameters
 	local _n_=$(grep -m 1 "Number of variables:" ${ins}.log | awk '{print $5}')
 	local _m_=$(grep -m 1 "Number of clauses:" ${ins}.log | awk '{print $5}')
 	local cvr=$(head -n 1 ${ins}.cvr)
@@ -54,11 +66,16 @@ fetchData() {
 
 	if [[ $num -eq 1 ]]; then
 		# Output params for base instance
-		echo "${ins},${_n_},,${_m_},,${cvr},,${res},,${mrg},,${_t_},,${_m2},,${sat},"
+		echo "${ins},${params//" "/","}," >> "${output_base}"
+		echo "${ins},${params//" "/",,"}," >> "${output_summary}"
 
 		# Output params for pre-processed instances
-		fetchData "${ins}_maplesat_preprocess" ${params}
-		fetchData "${ins}_glucose_preprocess" ${params}
+		maplesatStr=$(fetchData "${ins}_maplesat_preprocess" ${params})
+		glucoseStr=$(fetchData "${ins}_glucose_preprocess"  ${params})
+		echo "${maplesatStr}" >> "${output_maplesat}"
+		echo "${maplesatStr}" >> "${output_summary}"
+		echo "${glucoseStr}" >> "${output_glucose}"
+		echo "${glucoseStr}" >> "${output_summary}"
 	else
 		# Calculate percentage change
 		local delta_n_=-1; if [[ ${2} != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
@@ -75,7 +92,12 @@ fetchData() {
 }
 
 # Output CSV header
-echo "instance, vars, %change, clauses, %change, cvr, %change, resolvability, %change, mergeability, %change, solving time, %change, mergeability/m^2, %change, satisfiability"
+headers="vars,clauses,cvr,resolvability,mergeability,solving time,mergeability/m^2,satisfiability"
+echo "instance,${headers}," >> "${output_base}"
+headers="${headers//","/,%change,},"
+echo "instance,${headers}" >> "${output_maplesat}"
+echo "instance,${headers}" >> "${output_glucose}"
+echo "instance,${headers}" >> "${output_summary}"
 
 # Output data for each instance
 for i in $(getBaseInstances "${directory}")
