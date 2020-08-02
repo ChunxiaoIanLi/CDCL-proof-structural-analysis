@@ -66,8 +66,8 @@ fetchData() {
 
 	if [[ $num -eq 1 ]]; then
 		# Output params for base instance
-		echo "${ins},${params//" "/","}," >> "${output_base}"
-		echo "${ins},${params//" "/",,"}," >> "${output_summary}"
+		echo "${ins},${params// /,}," >> "${output_base}"
+		echo "${ins},${params// /,,}," >> "${output_summary}"
 
 		# Output params for pre-processed instances
 		maplesatStr=$(fetchData "${ins}_maplesat_preprocess" ${params})
@@ -93,11 +93,11 @@ fetchData() {
 
 # Output CSV header
 headers="vars,clauses,cvr,resolvability,mergeability,solving time,mergeability/m^2,satisfiability"
-echo "instance,${headers}," >> "${output_base}"
-headers="${headers//","/,%change,},"
-echo "instance,${headers}" >> "${output_maplesat}"
-echo "instance,${headers}" >> "${output_glucose}"
-echo "instance,${headers}" >> "${output_summary}"
+echo "instance,${headers}," > "${output_base}"
+headers="${headers//,/,%change,},"
+echo "instance,${headers}" > "${output_maplesat}"
+echo "instance,${headers}" > "${output_glucose}"
+echo "instance,${headers}" > "${output_summary}"
 
 # Output data for each instance
 for i in $(getBaseInstances "${directory}")
