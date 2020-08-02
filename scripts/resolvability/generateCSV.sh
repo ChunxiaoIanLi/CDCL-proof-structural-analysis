@@ -61,13 +61,13 @@ fetchData() {
 		fetchData "${ins}_glucose_preprocess" ${params}
 	else
 		# Calculate percentage change
-		local delta_n_=$(bc -l <<< "${_n_}/${2}")
-		local delta_m_=$(bc -l <<< "${_m_}/${3}")
-		local deltacvr=$(bc -l <<< "${cvr}/${4}")
-		local deltares=$(bc -l <<< "${res}/${5}")
-		local deltamrg=$(bc -l <<< "${mrg}/${6}")
-		local delta_t_=$(bc -l <<< "${_t_}/${7}")
-		local delta_m2=$(bc -l <<< "${_m2}/${8}")
+		local delta_n_=-1; if [[ ${2} != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
+		local delta_m_=-1; if [[ ${3} != "0" ]]; then delta_m_=$(bc -l <<< "${_m_}/${3}"); fi
+		local deltacvr=-1; if [[ ${4} != "0" ]]; then deltacvr=$(bc -l <<< "${cvr}/${4}"); fi
+		local deltares=-1; if [[ ${5} != "0" ]]; then deltares=$(bc -l <<< "${res}/${5}"); fi
+		local deltamrg=-1; if [[ ${6} != "0" ]]; then deltamrg=$(bc -l <<< "${mrg}/${6}"); fi
+		local delta_t_=-1; if [[ ${7} != "0" ]]; then delta_t_=$(bc -l <<< "${_t_}/${7}"); fi
+		local delta_m2=-1; if [[ ${8} != "0" ]]; then delta_m2=$(bc -l <<< "${_m2}/${8}"); fi
 
 		# Output params for pre-processed instances
 		echo "${ins},${_n_},${delta_n_},${_m_},${delta_m_},${cvr},${deltacvr},${res},${deltares},${mrg},${deltamrg},${_t_},${delta_t_},${_m2},${delta_m2},${sat},"
