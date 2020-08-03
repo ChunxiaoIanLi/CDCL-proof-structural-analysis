@@ -203,8 +203,8 @@ static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long lon
 		if (mergeabilityVector[i] != 0) indexOfGreatestNonZero = i;
 	}
 
-	// Output mergeability vector
-	for (unsigned int i = 0; i <= indexOfGreatestNonZero; ++i) {
+	// Output mergeability vector (output an additional zero at the end)
+	for (unsigned int i = 0; i <= indexOfGreatestNonZero + 1; ++i) {
 		outFile << i << " " << mergeabilityVector[i] << std::endl;
 	}
 }
