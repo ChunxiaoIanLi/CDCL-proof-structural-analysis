@@ -197,7 +197,14 @@ static void writeDegreeVector(std::ofstream& outFile, std::vector<long long>& de
 }
 
 static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long long>& mergeabilityVector) {
+	// Determine when to stop outputting the mergeability vector
+	unsigned int indexOfGreatestNonZero = 0;
 	for (unsigned int i = 0; i < mergeabilityVector.size(); ++i) {
+		if (mergeabilityVector[i] != 0) indexOfGreatestNonZero = i;
+	}
+
+	// Output mergeability vector
+	for (unsigned int i = 0; i <= indexOfGreatestNonZero; ++i) {
 		outFile << i << " " << mergeabilityVector[i] << std::endl;
 	}
 }
