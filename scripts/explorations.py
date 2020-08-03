@@ -26,16 +26,17 @@ mpl.rcParams.update({
 
 
 # Load data
-df = pd.read_csv("../data/statsSATSolver.csv").drop(['instance', 'SAT/UNSAT', 'clauses', 'beta', 'vars'], axis=1)
+df = pd.read_csv("./verification/c_bounded_model_checker_2018.csv").drop(['instance', 'satisfiability'], axis=1)
 
 # Plot correlations
-fig, axes = plt.subplots(nrows=4, ncols=4, figsize=(20, 20))
+fig, axes = plt.subplots(nrows=19, ncols=8, figsize=(20, 20))
 for i, column1 in enumerate(df.columns):
     for j, column2 in enumerate(df.columns):
-        axes[i,j].scatter(df[column1], df[column2], c=df['time'], s=df['time']/20, alpha=0.75, edgecolors='none')
+        axes[i,j].scatter(df[column1], df[column2], c=df['solving time'], s=df['solving time']/20, alpha=0.75, edgecolors='none')
         axes[i,j].set_xlabel("{0}".format(column1))
         axes[i,j].set_ylabel("{0}".format(column2))
-plt.savefig("../output/scatter.pdf")
+
+plt.savefig("./output/c_bounded_model_checker_2018.pdf")
 plt.close()
 
 # Let's do a PCA
