@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <assert.h>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -7,6 +8,20 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#define OPTION_ALL 'a'
+#define OPTION_CVR 'c'
+#define OPTION_DEGREE_VECTOR 'd'
+#define OPTION_MERGEABILITY 'm'
+#define OPTION_NUM 'n'
+#define OPTION_RESOLVABILITY 'r'
+
+#define MSV_NUM_BUCKETS 10
+#define MAX_MERGEABILITY_SCORE 0.5
+#define MAX_MERGEABILITY_SCORE_INV 2
+
+// Global options
+std::set<char> options;
 
 // Read clauses from file
 static int readClauses(std::vector<std::vector<long long>>& clauses, long long& numVars, long long& numClauses, long long& maxClauseWidth, const std::string& inputFileStr) {
@@ -66,14 +81,16 @@ static int readClauses(std::vector<std::vector<long long>>& clauses, long long& 
 	return 0;
 }
 
-
 static void computeCVR(double& cvr, long long numClauses, long long numVars) {
 	cvr = numClauses / static_cast<double>(numVars);
 }
 
-// Optimizing resolvability computation - this is asymptotically slower?
+// Optimizing resolvability computation
 // O(m^2 n^2 log(n)) 
-static int computeResolvable(long long& numResolvable, long long& numMergeable, std::vector<long long>& mergeabilityVector, std::vector<std::vector<long long>>& clauses, long long numVariables) {
+static int computeResolvable(
+	long long& numResolvable, long long& numMergeable, double& mergeabilityScore, std::vector<long long>& mergeabilityVector, std::vector<long long>& mergeabilityScoreVector,
+	std::vector<std::vector<long long>>& clauses, long long numVariables
+) {
 	const auto variableComparator = [](long long a, long long b) {
 		return std::abs(a) < std::abs(b);
 	};
@@ -141,9 +158,22 @@ static int computeResolvable(long long& numResolvable, long long& numMergeable, 
 				// Update counts
 				// O(1)
 				if (resolvable) {
-					numResolvable += 1;
-					numMergeable  += tmpNumMergeable;
+					++numResolvable;
 					++mergeabilityVector[tmpNumMergeable];
+					numMergeable += tmpNumMergeable;
+
+					// Calculate normalized mergeability score
+					if (options.find(OPTION_MERGEABILITY) != options.end()) {
+						const int totalClauseSize = static_cast<int>(posClause.size() + negClause.size());
+						if (totalClauseSize > 2) {
+							const double tmpMergeabilityScore = (2 * tmpNumMergeable) / static_cast<double>(totalClauseSize - 2);
+							mergeabilityScore += tmpMergeabilityScore;
+
+							// Add to histogram
+							const int scoreVectorIndex = static_cast<int>(std::floor(MAX_MERGEABILITY_SCORE_INV * MSV_NUM_BUCKETS * tmpMergeabilityScore));
+							++mergeabilityScoreVector[scoreVectorIndex];
+						}
+					}
 				}
 			}
 		}
@@ -182,6 +212,10 @@ static int writeFile(const std::string& outputFileStr, std::function<void(std::o
 	return 0;
 }
 
+static void writeNumVarsClauses(std::ofstream& outFile, long long numVars, long long numClauses) {
+	outFile << numVars << " " << numClauses << std::endl;
+}
+
 static void writeCVR(std::ofstream& outFile, double cvr) {
 	outFile << cvr << std::endl;
 }
@@ -209,20 +243,80 @@ static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long lon
 	}
 }
 
+static void writeMergeabilityScore(std::ofstream& outFile, double mergeabilityScore) {
+	outFile << mergeabilityScore << std::endl;
+}
+
+static void writeMergeabilityScoreVector(std::ofstream& outFile, std::vector<long long>& mergeabilityScoreVector) {
+	for (int i = 0; i <= MSV_NUM_BUCKETS; ++i) {
+		outFile << (i * MAX_MERGEABILITY_SCORE) / static_cast<double>(MSV_NUM_BUCKETS) << " " << mergeabilityScoreVector[i] << std::endl;
+	}
+}
+
+static void printHelp(const char* command) {
+	std::cerr << "Usage: " << command << " <OPTION [OPTIONS...]> <INPUT [INPUTS...]>" << std::endl;
+	std::cerr << "\t-" << OPTION_ALL           << ": enable all computations" << std::endl;
+	std::cerr << "\t-" << OPTION_CVR           << ": compute CVR" << std::endl;
+	std::cerr << "\t-" << OPTION_DEGREE_VECTOR << ": compute degree vector" << std::endl;
+	std::cerr << "\t-" << OPTION_MERGEABILITY  << ": compute mergeability" << std::endl;
+	std::cerr << "\t-" << OPTION_NUM           << ": output number of variables and clauses" << std::endl;
+	std::cerr << "\t-" << OPTION_RESOLVABILITY << ": compute resolvability, total number of mergeable pairs, and mergeability vector" << std::endl;
+}
+
+static int parseInput(std::set<char>& options, std::vector<std::string>& inputFiles, const int argc, const char* const* argv) {
+	// Read in option flags and input files
+	for (int argIndex = 1; argIndex < argc; ++argIndex) {
+		std::string inputStr(argv[argIndex]);
+		if (inputStr[0] == '-') { // Value is option
+			for (unsigned int i = 1; i < inputStr.size(); ++i) {
+				switch (inputStr[i]) {
+					case OPTION_ALL:
+					case OPTION_CVR:
+					case OPTION_DEGREE_VECTOR:
+					case OPTION_MERGEABILITY:
+					case OPTION_NUM:
+					case OPTION_RESOLVABILITY:
+						options.insert(inputStr[i]);
+						break;
+					default: return 1;
+				}
+			}
+		} else { // Value is input file
+			inputFiles.push_back(inputStr);
+		}
+	}
+
+	// Enable all options if OPTION_ALL is enabled
+	if (options.find(OPTION_ALL) != options.end()) {
+		options.insert(OPTION_CVR);
+		options.insert(OPTION_DEGREE_VECTOR);
+		options.insert(OPTION_MERGEABILITY);
+		options.insert(OPTION_NUM);
+		options.insert(OPTION_RESOLVABILITY);
+	}
+
+	// Report an error if there are no options
+	return options.size() == 0;
+}
+
 using namespace std::placeholders;
 int main (const int argc, const char* const * argv) {
 	// Validate input
 	if (argc < 2) {
-		std::cerr << "Usage: " << argv[0] << " <INPUT [INPUTS...]>" << std::endl;
+		printHelp(argv[0]);
 		return 1;
 	}
 
-	int argIndex = 1;
+	// Parse input
+	std::vector<std::string> inputFiles;
+	if (parseInput(options, inputFiles, argc, argv)) {
+		printHelp(argv[0]);
+		return 1;
+	}
 
-	while (argIndex != argc) {
+	for (const std::string& inputFileStr : inputFiles) {
 		// Read clauses from file
 		static const std::string CNF_EXTENSION = ".cnf";
-		const std::string inputFileStr(argv[argIndex]);
 		const std::string inputFileBaseStr = inputFileStr.substr(0, inputFileStr.size() - CNF_EXTENSION.size());
 		long long numVars = 0, numClauses = 0, maxClauseWidth = 0;
 		std::vector<std::vector<long long>> clauses;
@@ -231,8 +325,13 @@ int main (const int argc, const char* const * argv) {
 		assert(numClauses > 0);
 		assert(maxClauseWidth > 0);
 
+		// Output number of variables and clauses
+		if (options.find(OPTION_NUM) != options.end()) {
+			writeFile(inputFileBaseStr + ".num", std::bind(writeNumVarsClauses, _1, numVars, numClauses));
+		}
+
 		// Calculate and output CVR
-		{
+		if (options.find(OPTION_CVR) != options.end()) {
 			double cvr = 0;
 			computeCVR(cvr, numClauses, numVars);
 			assert(cvr > 0);
@@ -240,24 +339,34 @@ int main (const int argc, const char* const * argv) {
 		}
 
 		// Calculate and output degree vector
-		{
+		if (options.find(OPTION_DEGREE_VECTOR) != options.end()) {
 			std::vector<long long> degreeVector(numVars);
 			computeDegreeVector(degreeVector, clauses);
 			writeFile(inputFileBaseStr + ".dv", std::bind(writeDegreeVector, _1, degreeVector));
 		}
 
 		// Calculate and output num resolvable and num mergeable
-		{
+		if (options.find(OPTION_RESOLVABILITY) != options.end() ||
+			options.find(OPTION_MERGEABILITY)  != options.end()
+		) {
 			long long numResolvable = 0, numMergeable = 0;
+			double mergeabilityScore = 0;
 			std::vector<long long> mergeabilityVector(maxClauseWidth + 1);
-			computeResolvable(numResolvable, numMergeable, mergeabilityVector, clauses, numVars);
+			std::vector<long long> mergeabilityScoreVector(MSV_NUM_BUCKETS + 1);
+			computeResolvable(numResolvable, numMergeable, mergeabilityScore, mergeabilityVector, mergeabilityScoreVector, clauses, numVars);
 			assert(numResolvable >= 0);
 			assert(numMergeable >= 0);
-			writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
-			writeFile(inputFileBaseStr + ".mv", std::bind(writeMergeabilityVector, _1, mergeabilityVector));
-		}
 
-		++argIndex;
+			if (options.find(OPTION_RESOLVABILITY) != options.end()) {
+				writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
+				writeFile(inputFileBaseStr + ".mv", std::bind(writeMergeabilityVector, _1, mergeabilityVector));
+			}
+
+			if (options.find(OPTION_MERGEABILITY) != options.end()) {
+				writeFile(inputFileBaseStr + ".ms", std::bind(writeMergeabilityScore, _1, mergeabilityScore));
+				writeFile(inputFileBaseStr + ".msv", std::bind(writeMergeabilityScoreVector, _1, mergeabilityScoreVector));
+			}
+		}
 	}
 
 	return 0;
