@@ -38,6 +38,12 @@ getSat() {
 	fi
 }
 
+# Convert from exponential notation to a form understandable by bc
+# @param $1: value
+changeExpNotation() {
+	sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g' <<< "${1}"
+}
+
 # Get a CSV string of an instance's parameters
 # @param $1: instance name
 # [OPTIONAL] parameters in base instance
@@ -45,9 +51,12 @@ getSat() {
 # @param $3: number of clauses
 # @param $4: cvr
 # @param $5: resolvability
-# @param $6: mergeability
-# @param $7: solving time
-# @param $8: normalized mergeability (mergeability / number of clauses^2)
+# @param $6: total merges
+# @param $7: mergeability score
+# @param $8: solving time
+# @param $9: normalized total merges (total merges / number of clauses^2)
+# @param $10: normalized mergeability score (mergeability score / number of clauses^2)
+# @param $11: normalized mergeability score (mergeability score / resolvability)
 fetchData() {
 	local num=$#
 	local ins=$1
@@ -56,13 +65,30 @@ fetchData() {
 	local _n_=$(grep -m 1 "Number of variables:" ${ins}.log | awk '{print $5}')
 	local _m_=$(grep -m 1 "Number of clauses:" ${ins}.log | awk '{print $5}')
 	local cvr=$(head -n 1 ${ins}.cvr)
-	local tmp=(`head -n 1 ${ins}.rvm`)
-	local res=${tmp[0]}
-	local mrg=${tmp[1]}
+
+	local res=-1
+	local mrg=-1
+	local _m2=-1
+	if [[ -f "${ins}.rvm" ]]; then
+		local tmp=(`head -n 1 ${ins}.rvm`)
+		res=${tmp[0]}
+		mrg=${tmp[1]}
+		_m2=$(bc -l <<< "${mrg} / (${_m_} * ${_m_})")
+	fi
+
+	local _ms=-1
+	local ms2=-1
+	local ms3=-1
+	if [[ -f "${ins}.ms" ]]; then
+		_ms=$(head -n 1 ${ins}.ms)
+		local tmp=$(changeExpNotation ${_ms})
+		ms2=$(bc -l <<< "${tmp} / (${_m_} * ${_m_})")
+		if [[ ${res} != "0" ]]; then ms3=$(bc -l <<< "${tmp} / ${res}"); fi
+	fi
+
 	local _t_=$(grep -m 1 "CPU" ${ins}.log | awk '{print $4}')
-	local _m2=$(bc -l <<< "${mrg} / (${_m_} * ${_m_})")
 	local sat=$(getSat "${ins}")
-	local params="${_n_} ${_m_} ${cvr} ${res} ${mrg} ${_t_} ${_m2} ${sat}"
+	local params="${_n_} ${_m_} ${cvr} ${res} ${mrg} ${_ms} ${_t_} ${_m2} ${ms2} ${ms3} ${sat}"
 
 	if [[ $num -eq 1 ]]; then
 		# Output params for base instance
@@ -78,21 +104,24 @@ fetchData() {
 		echo "${glucoseStr}" >> "${output_summary}"
 	else
 		# Calculate percentage change
-		local delta_n_=-1; if [[ ${2} != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
-		local delta_m_=-1; if [[ ${3} != "0" ]]; then delta_m_=$(bc -l <<< "${_m_}/${3}"); fi
-		local deltacvr=-1; if [[ ${4} != "0" ]]; then deltacvr=$(bc -l <<< "${cvr}/${4}"); fi
-		local deltares=-1; if [[ ${5} != "0" ]]; then deltares=$(bc -l <<< "${res}/${5}"); fi
-		local deltamrg=-1; if [[ ${6} != "0" ]]; then deltamrg=$(bc -l <<< "${mrg}/${6}"); fi
-		local delta_t_=-1; if [[ ${7} != "0" ]]; then delta_t_=$(bc -l <<< "${_t_}/${7}"); fi
-		local delta_m2=-1; if [[ ${8} != "0" ]]; then delta_m2=$(bc -l <<< "${_m2}/${8}"); fi
+		local delta_n_=-1; if [[ ${2}  != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
+		local delta_m_=-1; if [[ ${3}  != "0" ]]; then delta_m_=$(bc -l <<< "${_m_}/${3}"); fi
+		local deltacvr=-1; if [[ ${4}  != "0" ]]; then deltacvr=$(bc -l <<< "${cvr}/${4}"); fi
+		local deltares=-1; if [[ ${5}  != "0" ]]; then deltares=$(bc -l <<< "${res}/${5}"); fi
+		local deltamrg=-1; if [[ ${6}  != "0" ]]; then deltamrg=$(bc -l <<< "${mrg}/${6}"); fi
+		local delta_ms=-1; if [[ ${7}  != "0" ]]; then delta_ms=$(bc -l <<< "$(changeExpNotation ${_ms})/$(changeExpNotation ${7})"); fi
+		local delta_t_=-1; if [[ ${8}  != "0" ]]; then delta_t_=$(bc -l <<< "${_t_}/${8}"); fi
+		local delta_m2=-1; if [[ ${9}  != "0" ]]; then delta_m2=$(bc -l <<< "${_m2}/${9}"); fi
+		local deltams2=-1; if [[ ${10} != "0" ]]; then deltams2=$(bc -l <<< "${ms2}/${10}"); fi
+		local deltams3=-1; if [[ ${11} != "0" ]]; then deltams3=$(bc -l <<< "$(changeExpNotation ${ms3})/$(changeExpNotation ${11})"); fi
 
 		# Output params for pre-processed instances
-		echo "${ins},${_n_},${delta_n_},${_m_},${delta_m_},${cvr},${deltacvr},${res},${deltares},${mrg},${deltamrg},${_t_},${delta_t_},${_m2},${delta_m2},${sat},"
+		echo "${ins},${_n_},${delta_n_},${_m_},${delta_m_},${cvr},${deltacvr},${res},${deltares},${mrg},${deltamrg},${_ms},${delta_ms},${_t_},${delta_t_},${_m2},${delta_m2},${ms2},${deltams2},${ms3},${deltams3},${sat},"
 	fi
 }
 
 # Output CSV header
-headers="vars,clauses,cvr,resolvability,mergeability,solving time,mergeability/m^2,satisfiability"
+headers="vars,clauses,cvr,resolvability,total merges,mergeability score,solving time,total merges/m^2,mergeability score/m^2,mergeability score/resolvability,satisfiability"
 echo "instance,${headers}," > "${output_base}"
 headers="${headers//,/,%change,},"
 echo "instance,${headers}" > "${output_maplesat}"
