@@ -166,7 +166,7 @@ static int computeResolvable(
 					if (options.find(OPTION_MERGEABILITY) != options.end()) {
 						const int totalClauseSize = static_cast<int>(posClause.size() + negClause.size());
 						if (totalClauseSize > 2) {
-							const double tmpMergeabilityScore = (2 * tmpNumMergeable) / static_cast<double>(totalClauseSize - 2);
+							const double tmpMergeabilityScore = tmpNumMergeable / static_cast<double>(totalClauseSize - 2);
 							mergeabilityScore += tmpMergeabilityScore;
 
 							// Add to histogram
