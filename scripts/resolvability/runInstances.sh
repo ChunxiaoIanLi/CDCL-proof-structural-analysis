@@ -3,6 +3,7 @@
 SHARCNET_ACCOUNT_NAME="vganesh"
 SHARCNET_TIMEOUT="00:00:5000"
 SHARCNET_MEMORY="5G"
+MAX_RETRIES=3;
 
 # validate input
 if [[ $# -lt 2 ]]; then
@@ -33,7 +34,13 @@ runinstance() {
 	echo "${SAT_SOLVER} -cpu-lim=4950 \"${1}\"" >> ${JOB_SCRIPT}
 
 	# queue job
-	sbatch ${JOB_SCRIPT}
+	for (( i=0; i <= ${MAX_RETRIES}; ++i )); do
+		if sbatch ${JOB_SCRIPT}; then
+			break
+		else
+			echo "Retrying... $((i + 1))/${MAX_RETRIES}"
+		fi
+	done
 
 	# Wait between queuing jobs
 	sleep 2
