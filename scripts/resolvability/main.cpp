@@ -12,8 +12,6 @@
 #define OPTION_ALL 'a'
 #define OPTION_CVR 'c'
 #define OPTION_DEGREE_VECTOR 'd'
-#define OPTION_MERGEABILITY 'm'
-#define OPTION_NUM 'n'
 #define OPTION_RESOLVABILITY 'r'
 
 #define MSV_NUM_BUCKETS 10
@@ -86,23 +84,14 @@ static void computeCVR(double& cvr, long long numClauses, long long numVars) {
 }
 
 // Optimizing resolvability computation
-// O(m^2 n^2 log(n)) 
+// O((max_degree(v))^2 k^2 log(k) + (m k)) 
 static int computeResolvable(
-	long long& numResolvable, long long& numMergeable, double& mergeabilityScore, std::vector<long long>& mergeabilityVector, std::vector<long long>& mergeabilityScoreVector,
+	std::pair<long long, long long>& numResMerge, double& mergeabilityScore, std::vector<long long>& mergeabilityVector,
+	std::vector<long long>& mergeabilityScoreVector, std::pair<long long, long long>& totalClauseWidths,
 	std::vector<std::vector<long long>>& clauses, long long numVariables
 ) {
-	const auto variableComparator = [](long long a, long long b) {
-		return std::abs(a) < std::abs(b);
-	};
-
-	// Sort variables
-	// O(m n log(n))
-	for (std::vector<long long>& clause : clauses) {
-		std::sort(clause.begin(), clause.end(), variableComparator);
-	}
-
 	// Generate clause lookup table
-	// O(m n)
+	// O(m k)
 	std::vector<std::vector<unsigned int>> posClauseIndices(numVariables);
 	std::vector<std::vector<unsigned int>> negClauseIndices(numVariables);
 	for (unsigned int i = 0; i < clauses.size(); ++i) {
@@ -114,34 +103,37 @@ static int computeResolvable(
 				negClauseIndices[-var - 1].emplace_back(i);
 			}
 		}
+
+		// Add to total clause width
+		totalClauseWidths.first += static_cast<long long>(clauses[i].size());
 	}
 
 	// Find all clauses which resolve on a variable
-	// O(m^2 n^2 log(n))
+	// O((max_degree(v))^2 k^2 log(k))
 	for (long long i = 0; i < numVariables; ++i) {
 		const std::vector<unsigned int>& posClauses = posClauseIndices[i];
 		const std::vector<unsigned int>& negClauses = negClauseIndices[i];
 		
 		// Check for clauses which resolve on the variable
-		// O(m^2 n log(n))
+		// O((max_degree(v))^2 k log(k))
 		for (unsigned int c_i : posClauses) {
 			const std::vector<long long>& posClause = clauses[c_i];
 
 			// Initialize set for checking resolvability
-			// O(n log(n))
+			// O(k log(k))
 			std::set<long long> found;
 			for (long long var : posClause) {
 				found.insert(var);
 			}
 
 			// Check if any of the negative clause resolves with the positive clause
-			// O(m n log(n))
+			// O((max_degree(v)) k log(k))
 			for (unsigned int c_j : negClauses) {
 				const std::vector<long long>& negClause = clauses[c_j];
 
 				// Check for resolvable/mergeable clauses
-				// O(n log(n))
-				bool resolvable = false;
+				// O(k log(k))
+				bool resolvable = false; // True if there is exactly one opposing literal
 				long long tmpNumMergeable = 0;
 				for (unsigned int k = 0; k < negClause.size(); ++k) {
 					if (found.find(-negClause[k]) != found.end()) {
@@ -158,22 +150,25 @@ static int computeResolvable(
 				// Update counts
 				// O(1)
 				if (resolvable) {
-					++numResolvable;
+					++numResMerge.first;
 					++mergeabilityVector[tmpNumMergeable];
-					numMergeable += tmpNumMergeable;
+					numResMerge.second += tmpNumMergeable;
 
 					// Calculate normalized mergeability score
-					if (options.find(OPTION_MERGEABILITY) != options.end()) {
-						const int totalClauseSize = static_cast<int>(posClause.size() + negClause.size());
-						if (totalClauseSize > 2) {
-							const double tmpMergeabilityScore = tmpNumMergeable / static_cast<double>(totalClauseSize - 2);
-							mergeabilityScore += tmpMergeabilityScore;
+					const int totalClauseSize = static_cast<int>(posClause.size() + negClause.size());
+					if (totalClauseSize > 2) {
+						const double tmpMergeabilityScore = tmpNumMergeable / static_cast<double>(totalClauseSize - 2);
+						mergeabilityScore += tmpMergeabilityScore;
 
-							// Add to histogram
-							const int scoreVectorIndex = static_cast<int>(std::floor(MAX_MERGEABILITY_SCORE_INV * MSV_NUM_BUCKETS * tmpMergeabilityScore));
-							++mergeabilityScoreVector[scoreVectorIndex];
-						}
+						// Add to histogram
+						// index = [ (local mergeability score) / (max mergeability score) ] * (num buckets)
+						const int scoreVectorIndex = static_cast<int>(std::floor(MAX_MERGEABILITY_SCORE_INV * MSV_NUM_BUCKETS * tmpMergeabilityScore));
+						++mergeabilityScoreVector[scoreVectorIndex];
 					}
+
+					// Add to total post-resolution clause size
+					const long long postResolutionClauseSize = static_cast<long long>(totalClauseSize - tmpNumMergeable - 2);
+					totalClauseWidths.second += static_cast<long long>(postResolutionClauseSize);
 				}
 			}
 		}
@@ -212,16 +207,12 @@ static int writeFile(const std::string& outputFileStr, std::function<void(std::o
 	return 0;
 }
 
-static void writeNumVarsClauses(std::ofstream& outFile, long long numVars, long long numClauses) {
-	outFile << numVars << " " << numClauses << std::endl;
+static void writeCVR(std::ofstream& outFile, long long numClauses, long long numVars, double cvr) {
+	outFile << numClauses << " " << numVars << " " << cvr << std::endl;
 }
 
-static void writeCVR(std::ofstream& outFile, double cvr) {
-	outFile << cvr << std::endl;
-}
-
-static void writeResolvability(std::ofstream& outFile, long long numResolvable, long long numMergeable) {
-	outFile << numResolvable << " " << numMergeable << std::endl;
+static void writeResolvability(std::ofstream& outFile, long long numResolvable, long long numMergeable, double mergeabilityScore) {
+	outFile << numResolvable << " " << numMergeable << " " << mergeabilityScore << std::endl;
 }
 
 static void writeDegreeVector(std::ofstream& outFile, std::vector<long long>& degreeVector) {
@@ -243,14 +234,14 @@ static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long lon
 	}
 }
 
-static void writeMergeabilityScore(std::ofstream& outFile, double mergeabilityScore) {
-	outFile << mergeabilityScore << std::endl;
-}
-
 static void writeMergeabilityScoreVector(std::ofstream& outFile, std::vector<long long>& mergeabilityScoreVector) {
 	for (int i = 0; i <= MSV_NUM_BUCKETS; ++i) {
 		outFile << (i * MAX_MERGEABILITY_SCORE) / static_cast<double>(MSV_NUM_BUCKETS) << " " << mergeabilityScoreVector[i] << std::endl;
 	}
+}
+
+static void writeClauseWidths(std::ofstream& outFile, long long totalOriginalClauseWidth, long long totalPostResClauseWidth) {
+	outFile << totalOriginalClauseWidth << " " << totalPostResClauseWidth << std::endl;
 }
 
 static void printHelp(const char* command) {
@@ -258,9 +249,7 @@ static void printHelp(const char* command) {
 	std::cerr << "\t-" << OPTION_ALL           << ": enable all computations" << std::endl;
 	std::cerr << "\t-" << OPTION_CVR           << ": compute CVR" << std::endl;
 	std::cerr << "\t-" << OPTION_DEGREE_VECTOR << ": compute degree vector" << std::endl;
-	std::cerr << "\t-" << OPTION_MERGEABILITY  << ": compute mergeability" << std::endl;
-	std::cerr << "\t-" << OPTION_NUM           << ": output number of variables and clauses" << std::endl;
-	std::cerr << "\t-" << OPTION_RESOLVABILITY << ": compute resolvability, total number of mergeable pairs, and mergeability vector" << std::endl;
+	std::cerr << "\t-" << OPTION_RESOLVABILITY << ": compute resolvability, mergeability, mergeability vector, and total clause widths" << std::endl;
 }
 
 static int parseInput(std::set<char>& options, std::vector<std::string>& inputFiles, const int argc, const char* const* argv) {
@@ -273,8 +262,6 @@ static int parseInput(std::set<char>& options, std::vector<std::string>& inputFi
 					case OPTION_ALL:
 					case OPTION_CVR:
 					case OPTION_DEGREE_VECTOR:
-					case OPTION_MERGEABILITY:
-					case OPTION_NUM:
 					case OPTION_RESOLVABILITY:
 						options.insert(inputStr[i]);
 						break;
@@ -290,8 +277,6 @@ static int parseInput(std::set<char>& options, std::vector<std::string>& inputFi
 	if (options.find(OPTION_ALL) != options.end()) {
 		options.insert(OPTION_CVR);
 		options.insert(OPTION_DEGREE_VECTOR);
-		options.insert(OPTION_MERGEABILITY);
-		options.insert(OPTION_NUM);
 		options.insert(OPTION_RESOLVABILITY);
 	}
 
@@ -325,17 +310,12 @@ int main (const int argc, const char* const * argv) {
 		assert(numClauses > 0);
 		assert(maxClauseWidth > 0);
 
-		// Output number of variables and clauses
-		if (options.find(OPTION_NUM) != options.end()) {
-			writeFile(inputFileBaseStr + ".num", std::bind(writeNumVarsClauses, _1, numVars, numClauses));
-		}
-
 		// Calculate and output CVR
 		if (options.find(OPTION_CVR) != options.end()) {
 			double cvr = 0;
 			computeCVR(cvr, numClauses, numVars);
 			assert(cvr > 0);
-			writeFile(inputFileBaseStr + ".cvr", std::bind(writeCVR, _1, cvr));
+			writeFile(inputFileBaseStr + ".cvr", std::bind(writeCVR, _1, numClauses, numVars, cvr));
 		}
 
 		// Calculate and output degree vector
@@ -346,26 +326,20 @@ int main (const int argc, const char* const * argv) {
 		}
 
 		// Calculate and output num resolvable and num mergeable
-		if (options.find(OPTION_RESOLVABILITY) != options.end() ||
-			options.find(OPTION_MERGEABILITY)  != options.end()
-		) {
-			long long numResolvable = 0, numMergeable = 0;
+		if (options.find(OPTION_RESOLVABILITY) != options.end()) {
 			double mergeabilityScore = 0;
+			std::pair<long long, long long> numResMerge = std::make_pair<long long, long long>(0, 0);
 			std::vector<long long> mergeabilityVector(maxClauseWidth + 1);
 			std::vector<long long> mergeabilityScoreVector(MSV_NUM_BUCKETS + 1);
-			computeResolvable(numResolvable, numMergeable, mergeabilityScore, mergeabilityVector, mergeabilityScoreVector, clauses, numVars);
-			assert(numResolvable >= 0);
-			assert(numMergeable >= 0);
+			std::pair<long long, long long> totalClauseWidths = std::make_pair<long long, long long>(0, 0);
+			computeResolvable(numResMerge, mergeabilityScore, mergeabilityVector, mergeabilityScoreVector, totalClauseWidths, clauses, numVars);
+			assert(numResMerge.first  >= 0);
+			assert(numResMerge.second >= 0);
 
-			if (options.find(OPTION_RESOLVABILITY) != options.end()) {
-				writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResolvable, numMergeable));
-				writeFile(inputFileBaseStr + ".mv", std::bind(writeMergeabilityVector, _1, mergeabilityVector));
-			}
-
-			if (options.find(OPTION_MERGEABILITY) != options.end()) {
-				writeFile(inputFileBaseStr + ".ms", std::bind(writeMergeabilityScore, _1, mergeabilityScore));
-				writeFile(inputFileBaseStr + ".msv", std::bind(writeMergeabilityScoreVector, _1, mergeabilityScoreVector));
-			}
+			writeFile(inputFileBaseStr + ".tcw", std::bind(writeClauseWidths, _1, totalClauseWidths.first, totalClauseWidths.second));
+			writeFile(inputFileBaseStr + ".rvm", std::bind(writeResolvability, _1, numResMerge.first, numResMerge.second, mergeabilityScore));
+			writeFile(inputFileBaseStr + ".mv",  std::bind(writeMergeabilityVector, _1, mergeabilityVector));
+			writeFile(inputFileBaseStr + ".msv", std::bind(writeMergeabilityScoreVector, _1, mergeabilityScoreVector));
 		}
 	}
 
