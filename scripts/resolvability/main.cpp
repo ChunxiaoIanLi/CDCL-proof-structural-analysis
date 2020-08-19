@@ -86,7 +86,7 @@ static void computeCVR(double& cvr, long long numClauses, long long numVars) {
 // Optimizing resolvability computation
 // O((max_degree(v))^2 k^2 log(k) + (m k)) 
 static int computeResolvable(
-	std::pair<long long, long long>& numResMerge, double& mergeabilityScore, std::vector<long long>& mergeabilityVector,
+	std::pair<long long, long long>& numResMerge, std::pair<double, double>& mergeabilityScore, std::vector<long long>& mergeabilityVector,
 	std::vector<long long>& mergeabilityScoreVector, std::pair<long long, long long>& totalClauseWidths,
 	std::vector<std::vector<long long>>& clauses, long long numVariables
 ) {
@@ -157,8 +157,10 @@ static int computeResolvable(
 					// Calculate normalized mergeability score
 					const int totalClauseSize = static_cast<int>(posClause.size() + negClause.size());
 					if (totalClauseSize > 2) {
-						const double tmpMergeabilityScore = tmpNumMergeable / static_cast<double>(totalClauseSize - 2);
-						mergeabilityScore += tmpMergeabilityScore;
+						const double tmpMergeabilityScore  = tmpNumMergeable / static_cast<double>(totalClauseSize - 2);
+						const double tmpMergeabilityScore2 = tmpNumMergeable / static_cast<double>(totalClauseSize - tmpNumMergeable - 2);
+						mergeabilityScore.first  += tmpMergeabilityScore;
+						mergeabilityScore.second += tmpMergeabilityScore2;
 
 						// Add to histogram
 						// index = [ (local mergeability score) / (max mergeability score) ] * (num buckets)
@@ -211,8 +213,8 @@ static void writeCVR(std::ofstream& outFile, long long numClauses, long long num
 	outFile << numClauses << " " << numVars << " " << cvr << std::endl;
 }
 
-static void writeResolvability(std::ofstream& outFile, long long numResolvable, long long numMergeable, double mergeabilityScore) {
-	outFile << numResolvable << " " << numMergeable << " " << mergeabilityScore << std::endl;
+static void writeResolvability(std::ofstream& outFile, long long numResolvable, long long numMergeable, const std::pair<double, double>& mergeabilityScore) {
+	outFile << numResolvable << " " << numMergeable << " " << mergeabilityScore.first << " " << mergeabilityScore.second << std::endl;
 }
 
 static void writeDegreeVector(std::ofstream& outFile, std::vector<long long>& degreeVector) {
@@ -327,7 +329,7 @@ int main (const int argc, const char* const * argv) {
 
 		// Calculate and output num resolvable and num mergeable
 		if (options.find(OPTION_RESOLVABILITY) != options.end()) {
-			double mergeabilityScore = 0;
+			std::pair<double, double> mergeabilityScore = std::make_pair<double, double>(0, 0);
 			std::pair<long long, long long> numResMerge = std::make_pair<long long, long long>(0, 0);
 			std::vector<long long> mergeabilityVector(maxClauseWidth + 1);
 			std::vector<long long> mergeabilityScoreVector(MSV_NUM_BUCKETS + 1);
