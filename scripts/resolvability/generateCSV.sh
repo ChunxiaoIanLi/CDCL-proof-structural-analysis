@@ -55,11 +55,14 @@ changeExpNotation() {
 # @param $7: total merges
 # @param $8: normalized total merges (total merges / number of clauses^2)
 # @param $9: normalized total merges (total merges / resolvability)
-# @param $10: mergeability score
-# @param $11: normalized mergeability score (mergeability score / number of clauses^2)
-# @param $12: normalized mergeability score (mergeability score / resolvability)
-# @param $13: total clause width
-# @param $14: total post-resolution clause width
+# @param $10: mergeability score 1 (num_merge_literals / (width_1 + width_2 - 2))
+# @param $11: normalized mergeability score 1 (mergeability score / number of clauses^2)
+# @param $12: normalized mergeability score 1 (mergeability score / resolvability)
+# @param $13: mergeability score 2 (num_merge_literals / (width_1 + width_2 - num_merge_literals - 2))
+# @param $14: normalized mergeability score 2 (mergeability score / number of clauses^2)
+# @param $15: normalized mergeability score 2 (mergeability score / resolvability)
+# @param $16: total clause width
+# @param $17: total post-resolution clause width
 fetchData() {
 	local num=$#
 	local ins=$1
@@ -76,23 +79,30 @@ fetchData() {
 	fi
 
 	local res=-1
-	local mrg=-1
-	local _m2=-1
-	local _m3=-1
-	local _ms=-1
-	local ms2=-1
-	local ms3=-1
+	local mrg1=-1
+	local mrg2=-1
+	local mrg3=-1
+	local ms11=-1
+	local ms12=-1
+	local ms13=-1
+	local ms21=-1
+	local ms22=-1
+	local ms23=-1
 	if [[ -f "${ins}.rvm" ]]; then
 		local tmp=(`head -n 1 ${ins}.rvm`)
 		res=${tmp[0]}
-		mrg=${tmp[1]}
-		_ms=${tmp[2]}
-		tmp=$(changeExpNotation ${_ms})
-		_m2=$(bc -l <<< "${mrg} / (${_m_} * ${_m_})")
-		ms2=$(bc -l <<< "${tmp} / (${_m_} * ${_m_})")
+		mrg1=${tmp[1]}
+		ms11=${tmp[2]}
+		ms21=${tmp[3]}
+		local tmp1=$(changeExpNotation ${ms11})
+		local tmp2=$(changeExpNotation ${ms21})
+		mrg2=$(bc -l <<< "${mrg1} / (${_m_} * ${_m_})")
+		ms12=$(bc -l <<< "${tmp1} / (${_m_} * ${_m_})")
+		ms22=$(bc -l <<< "${tmp2} / (${_m_} * ${_m_})")
 		if [[ ${res} != "0" ]]; then
-			_m3=$(bc -l <<< "${mrg} / ${res}");
-			ms3=$(bc -l <<< "${tmp} / ${res}");
+			mrg3=$(bc -l <<< "${mrg1} / ${res}");
+			ms13=$(bc -l <<< "${tmp1} / ${res}");
+			ms23=$(bc -l <<< "${tmp2} / ${res}");
 		fi
 	fi
 
@@ -111,7 +121,7 @@ fetchData() {
 		cw2=$(bc -l <<< "${tmp[1]}/${res}")
 	fi
 
-	local params="${_n_} ${_m_} ${_t_} ${cvr} ${res} ${mrg} ${_m2} ${_m3} ${_ms} ${ms2} ${ms3} ${cw1} ${cw2} ${sat}"
+	local params="${_n_} ${_m_} ${_t_} ${cvr} ${res} ${mrg1} ${mrg2} ${mrg3} ${ms11} ${ms12} ${ms13} ${ms21} ${ms22} ${ms23} ${cw1} ${cw2} ${sat}"
 
 	if [[ $num -eq 1 ]]; then
 		# Output params for base instance
@@ -127,27 +137,30 @@ fetchData() {
 		echo "${glucoseStr}" >> "${output_summary}"
 	else
 		# Calculate percentage change
-		local delta_n_=-1; if [[ ${2}  != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
-		local delta_m_=-1; if [[ ${3}  != "0" ]]; then delta_m_=$(bc -l <<< "${_m_}/${3}"); fi
-		local delta_t_=-1; if [[ ${4}  != "0" ]]; then delta_t_=$(bc -l <<< "${_t_}/${4}"); fi
-		local deltacvr=-1; if [[ ${5}  != "0" ]]; then deltacvr=$(bc -l <<< "${cvr}/${5}"); fi
-		local deltares=-1; if [[ ${6}  != "0" ]]; then deltares=$(bc -l <<< "${res}/${6}"); fi
-		local deltamrg=-1; if [[ ${7}  != "0" ]]; then deltamrg=$(bc -l <<< "${mrg}/${7}"); fi
-		local delta_m2=-1; if [[ ${8}  != "0" ]]; then delta_m2=$(bc -l <<< "${_m2}/${8}"); fi
-		local delta_m3=-1; if [[ ${9}  != "0" ]]; then delta_m3=$(bc -l <<< "${_m3}/${9}"); fi
-		local delta_ms=-1; if [[ ${10} != "0" ]]; then delta_ms=$(bc -l <<< "$(changeExpNotation ${_ms})/$(changeExpNotation ${10})"); fi
-		local deltams2=-1; if [[ ${11} != "0" ]]; then deltams2=$(bc -l <<< "$(changeExpNotation ${ms2})/$(changeExpNotation ${11})"); fi
-		local deltams3=-1; if [[ ${12} != "0" ]]; then deltams3=$(bc -l <<< "$(changeExpNotation ${ms3})/$(changeExpNotation ${12})"); fi
-		local deltacw1=-1; if [[ ${13} != "0" ]]; then deltacw1=$(bc -l <<< "${cw1}/${13}"); fi
-		local deltacw2=-1; if [[ ${14} != "0" ]]; then deltacw2=$(bc -l <<< "${cw2}/${14}"); fi
+		local delta_n_=-1; if [[ ${2} != "0" ]]; then delta_n_=$(bc -l <<< "${_n_}/${2}"); fi
+		local delta_m_=-1; if [[ ${3} != "0" ]]; then delta_m_=$(bc -l <<< "${_m_}/${3}"); fi
+		local delta_t_=-1; if [[ ${4} != "0" ]]; then delta_t_=$(bc -l <<< "${_t_}/${4}"); fi
+		local deltacvr=-1; if [[ ${5} != "0" ]]; then deltacvr=$(bc -l <<< "${cvr}/${5}"); fi
+		local deltares=-1; if [[ ${6} != "0" ]]; then deltares=$(bc -l <<< "${res}/${6}"); fi
+		local deltamrg1=-1; if [[ ${7} != "0" ]]; then deltamrg1=$(bc -l <<< "${mrg1}/${7}"); fi
+		local deltamrg2=-1; if [[ ${8} != "0" ]]; then deltamrg2=$(bc -l <<< "${mrg2}/${8}"); fi
+		local deltamrg3=-1; if [[ ${9} != "0" ]]; then deltamrg3=$(bc -l <<< "${mrg3}/${9}"); fi
+		local deltams11=-1; if [[ ${10} != "0" ]]; then deltams11=$(bc -l <<< "$(changeExpNotation ${ms11})/$(changeExpNotation ${10})"); fi
+		local deltams12=-1; if [[ ${11} != "0" ]]; then deltams12=$(bc -l <<< "$(changeExpNotation ${ms12})/$(changeExpNotation ${11})"); fi
+		local deltams13=-1; if [[ ${12} != "0" ]]; then deltams13=$(bc -l <<< "$(changeExpNotation ${ms13})/$(changeExpNotation ${12})"); fi
+		local deltams21=-1; if [[ ${13} != "0" ]]; then deltams21=$(bc -l <<< "$(changeExpNotation ${ms21})/$(changeExpNotation ${13})"); fi
+		local deltams22=-1; if [[ ${14} != "0" ]]; then deltams22=$(bc -l <<< "$(changeExpNotation ${ms22})/$(changeExpNotation ${14})"); fi
+		local deltams23=-1; if [[ ${15} != "0" ]]; then deltams23=$(bc -l <<< "$(changeExpNotation ${ms23})/$(changeExpNotation ${15})"); fi
+		local deltacw1=-1; if [[ ${16} != "0" ]]; then deltacw1=$(bc -l <<< "${cw1}/${16}"); fi
+		local deltacw2=-1; if [[ ${17} != "0" ]]; then deltacw2=$(bc -l <<< "${cw2}/${17}"); fi
 
 		# Output params for pre-processed instances
-		echo "${ins},${_n_},${delta_n_},${_m_},${delta_m_},${_t_},${delta_t_},${cvr},${deltacvr},${res},${deltares},${mrg},${deltamrg},${_m2},${delta_m2},${_m3},${delta_m3},${_ms},${delta_ms},${ms2},${deltams2},${ms3},${deltams3},${cw1},${deltacw1},${cw2},${deltacw2},${sat}"
+		echo "${ins},${_n_},${delta_n_},${_m_},${delta_m_},${_t_},${delta_t_},${cvr},${deltacvr},${res},${deltares},${mrg1},${deltamrg1},${mrg2},${deltamrg2},${mrg3},${deltamrg3},${ms11},${deltams11},${ms12},${deltams12},${ms13},${deltams13},${ms21},${deltams21},${ms22},${deltams22},${ms23},${deltams23},${cw1},${deltacw1},${cw2},${deltacw2},${sat}"
 	fi
 }
 
 # Output CSV header
-headers="vars,clauses,solving time,cvr,resolvability,total merges,total merges/m^2,total merges/resolvability,mergeability score,mergeability score/m^2,mergeability score/resolvability,average pre-resolution clause width,average post-resolution clause width,satisfiability"
+headers="vars,clauses,solving time,cvr,resolvability,total merges,total merges/m^2,total merges/resolvability,mergeability_score_1,mergeability_score_1/m^2,mergeability_score_1/resolvability,mergeability_score_2,mergeability_score_2/m^2,mergeability_score_2/resolvability,average pre-resolution clause width,average post-resolution clause width,satisfiability"
 echo "instance,${headers}," > "${output_base}"
 headers="${headers//,/,%change,},"
 echo "instance,${headers}" > "${output_maplesat}"
@@ -157,10 +170,6 @@ echo "instance,${headers}" > "${output_summary}"
 # Output data for each instance
 for i in $(getBaseInstances "${directory}")
 do
-    # Print beta:
-    #cat /scratch/ianli/parameters_of_industiral/verification/fitted_powerlaw/c_bounded_model_checker/$i.dv_fitted.log | head -n 1 | cut -d' ' -f2
-    #cat /scratch/ianli/parameters_of_industiral/verification/fitted_powerlaw/c_bounded_model_checker/$i\_preprocess.dv_fitted.log | head -n 1 | cut -d' ' -f2
-
     # Data for original
     fetchData "${i}"
 done
