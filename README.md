@@ -1,1 +1,0 @@
-# CDCL-proof-structural-analysis
