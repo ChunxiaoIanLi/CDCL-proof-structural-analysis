@@ -100,6 +100,75 @@ void ParamComputation::computeResolvable(
 	}
 }
 
+void ParamComputation::computeMergeability(
+	long long& totalNumResolvable, long long& totalNumMergeable,
+	const std::vector<std::vector<long long>>& clauses, long long numVariables
+) {
+	// Generate clause lookup table
+	// O(m k)
+	std::vector<std::vector<unsigned int>> posClauseIndices(numVariables);
+	std::vector<std::vector<unsigned int>> negClauseIndices(numVariables);
+	for (unsigned int i = 0; i < clauses.size(); ++i) {
+		for (unsigned int c_i = 0; c_i < clauses[i].size(); ++c_i) {
+			const int var = clauses[i][c_i];
+			if (var > 0) { // The variable should never be zero
+				posClauseIndices[+var - 1].emplace_back(i);	
+			} else {
+				negClauseIndices[-var - 1].emplace_back(i);
+			}
+		}
+	}
+
+	// Find all clauses which resolve on a variable
+	// O((max_degree(v))^2 k^2 log(k))
+	for (long long i = 0; i < numVariables; ++i) {
+		const std::vector<unsigned int>& posClauses = posClauseIndices[i];
+		const std::vector<unsigned int>& negClauses = negClauseIndices[i];
+		
+		// Check for clauses which resolve on the variable
+		// O((max_degree(v))^2 k log(k))
+		for (unsigned int c_i : posClauses) {
+			const std::vector<long long>& posClause = clauses[c_i];
+
+			// Initialize set for checking resolvability
+			// O(k log(k))
+			std::set<long long> found;
+			for (long long var : posClause) {
+				found.insert(var);
+			}
+
+			// Check if any of the negative clause resolves with the positive clause
+			// O((max_degree(v)) k log(k))
+			for (unsigned int c_j : negClauses) {
+				const std::vector<long long>& negClause = clauses[c_j];
+
+				// Check for resolvable/mergeable clauses
+				// O(k log(k))
+				bool resolvable = false; // True if there is exactly one opposing literal
+				long long tmpNumMergeable = 0;
+				for (unsigned int k = 0; k < negClause.size(); ++k) {
+					if (found.find(-negClause[k]) != found.end()) {
+						if (resolvable) {
+							resolvable = false;
+							break;
+						}
+						resolvable = true;
+					} else if (found.find(negClause[k]) != found.end()) {
+						++tmpNumMergeable;
+					}
+				}
+
+				// Update counts
+				// O(1)
+				if (resolvable) {
+					++totalNumResolvable;
+					totalNumMergeable += tmpNumMergeable;
+				}
+			}
+		}
+	}
+}
+
 void ParamComputation::computeDegreeVector(std::vector<long long>& degreeVector, std::vector<std::vector<long long>>& clauses) {
 	// Iterate through every variable of every clause
 	for (const std::vector<long long>& clause : clauses) {

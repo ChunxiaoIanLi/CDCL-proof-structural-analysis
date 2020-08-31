@@ -12,28 +12,29 @@ LDFLAGS = -s
 
 # Source files
 SRC_DIR = src
-SRCS = \
-	main.cpp \
-	$(wildcard $(SRC_DIR)/*.cpp)
+MAIN_SRC = main.cpp
+PYTHON_BINDING_SRC = pythonBindings.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
 # Object files
+MAIN_OBJ = $(subst .cpp,.o,$(MAIN_SRC))
+PYTHON_BINDING_OBJ = $(subst .cpp,.o,$(PYTHON_BINDING_SRC))
 OBJS = $(subst .cpp,.o,$(SRCS))
 
-TARGET = countResolvable
+MAIN_TARGET = countResolvable
+PYTHON_BINDING_TARGET = libmergeability.so
 
 .PHONY: all clean
 
-all: $(TARGET) 
+$(MAIN_TARGET): $(OBJS) $(MAIN_OBJ)
+	$(CXX) $(CPPFLAGS) -o $(MAIN_TARGET) $(MAIN_OBJ) $(OBJS) $(LDFLAGS)
 
-run: $(TARGET)
-	$(TARGET)
-
-$(TARGET): $(OBJS)
-	$(CXX) $(CPPFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
+$(PYTHON_BINDING_TARGET): $(OBJS) $(PYTHON_BINDING_OBJ)
+	$(CXX) -shared -Wl,-soname,$(PYTHON_BINDING_TARGET) -o $(PYTHON_BINDING_TARGET) $(PYTHON_BINDING_OBJ)
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	$(RM) $(TARGET) $(OBJS)
+	$(RM) $(MAIN_TARGET) $(PYTHON_BINDING_TARGET) $(MAIN_OBJ) $(PYTHON_BINDING_OBJ) $(SRC_DIR)/*.o
 

@@ -37,6 +37,18 @@ public:
 	);
 
 	/**
+	 * @brief Compute parameters related to resolvability and mergeability
+	 * @param totalNumResolvable The address into which to write the total number of resolvable clause pairs
+	 * @param totalNumMergeable The address into which to write the total number of mergeable literal pairs
+	 * @param clauses The clauses over which to compute resolvability and mergeability
+	 * @param numVariables The number of distinct variables in clauses
+	 */
+	static void computeMergeability(
+		long long& totalNumResolvable, long long& totalNumMergeable,
+		const std::vector<std::vector<long long>>& clauses, long long numVariables
+	);
+
+	/**
 	 * @brief Compute the degree vector
 	 * @param degreeVector A vector to hold the degree vector output
 	 * @param clauses The clauses over which to compute the degree vector
