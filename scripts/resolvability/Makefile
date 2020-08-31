@@ -7,7 +7,7 @@ RM  = rm -rf
 WARNS = -Wall
 
 # Compiler and linker flags
-CPPFLAGS = -O3 -std=c++17 -I/usr/include/python2.7/ $(WARNS)
+CPPFLAGS = -O3 -std=c++17 -I../../../python2.7/ $(WARNS)
 LDFLAGS = -s
 
 # Source files
