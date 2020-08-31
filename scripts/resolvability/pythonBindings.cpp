@@ -3,38 +3,31 @@
 #include <vector>
 #include "src/paramComputation.h"
 
-static int convertPyClausesToCpp(std::vector<std::vector<long long>>& cppClauses, PyObject* pyClauses) {
-	if (!PyList_Check(pyClauses)) return 1;
-	for (Py_ssize_t i = 0; i < PyList_Size(pyClauses); ++i) {
+static void convertPyClausesToCpp(std::vector<std::vector<long long>>& cppClauses, long long* pyClauses, long long size) {
+	long long i = 0;
+	while (i < size) {
 		std::vector<long long> cppClause;
-		PyObject* pyClause = PyList_GetItem(pyClauses, i);
-		if (!PyList_Check(pyClause)) return 1;
-		for (Py_ssize_t j = 0; j < PyList_Size(pyClause); ++j) {
-			PyObject* pyLiteral = PyList_GetItem(pyClause, i);
-			cppClause.push_back(PyLong_AsLongLong(pyLiteral));
+		while (pyClauses[i] != 0) {
+			cppClause.push_back(pyClauses[i]);
+			++i;
 		}
+		++i;
 		cppClauses.push_back(cppClause);
 	}
-
-	return 0;
 }
 
-static PyObject* _calculateMergeability(PyObject* pyClauses, PyObject* pyNumVars) {
-	const long long numVars = PyLong_AsLongLong(pyNumVars);
+static long long _calculateMergeability(long long* pyClauses, long long numVars, long long size) {
 	std::vector<std::vector<long long>> cppClauses;
-	if (convertPyClausesToCpp(cppClauses, pyClauses)) {
-		std::cerr << "Error: input object is not a python list" << std::endl;
-		return NULL;
-	}
+	convertPyClausesToCpp(cppClauses, pyClauses, size);
 
 	long long totalNumResolvable = 0;
 	long long totalNumMergeable = 0;
 	ParamComputation::computeMergeability(totalNumResolvable, totalNumMergeable, cppClauses, numVars);
-	return PyLong_FromLongLong(totalNumMergeable);
+	return totalNumMergeable;
 }
 
 extern "C" {
-	PyObject* calculateMergeability(PyObject* pyClauses, PyObject* pyNumVars) {
-		return _calculateMergeability(pyClauses, pyNumVars);
+	long long calculateMergeability(long long* pyClauses, long long numVars, long long size) {
+		return _calculateMergeability(pyClauses, numVars, size);
 	}
 }
