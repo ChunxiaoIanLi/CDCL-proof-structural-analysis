@@ -11,18 +11,19 @@ CPPFLAGS = -g -O3 -std=c++17 $(WARNS)
 LDFLAGS = -s
 
 # Source files
-SRC_DIR = .
+SRC_DIR = src
 SRCS = \
+	main.cpp \
 	$(wildcard $(SRC_DIR)/*.cpp)
 
 # Object files
-OBJS = $(foreach SRC, $(subst .cpp,.o,$(SRCS)), $(SRC:$(SRC_DIR)/%=%))
+OBJS = $(subst .cpp,.o,$(SRCS))
 
 TARGET = countResolvable
 
 .PHONY: all clean
 
-all: $(OUT_DIR) $(OBJ_DIR) $(TARGET) 
+all: $(TARGET) 
 
 run: $(TARGET)
 	$(TARGET)
@@ -34,5 +35,5 @@ $(TARGET): $(OBJS)
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	$(RM) $(TARGET) *.o
+	$(RM) $(TARGET) $(OBJS)
 
