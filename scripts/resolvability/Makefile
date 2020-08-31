@@ -7,7 +7,7 @@ RM  = rm -rf
 WARNS = -Wall
 
 # Compiler and linker flags
-CPPFLAGS = -g -O3 -std=c++17 $(WARNS)
+CPPFLAGS = -O3 -std=c++17 $(WARNS)
 LDFLAGS = -s
 
 # Source files
@@ -29,7 +29,7 @@ run: $(TARGET)
 	$(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) -o $(TARGET) $(OBJS) $(CPPFLAGS) $(LDFLAGS)
+	$(CXX) $(CPPFLAGS) -o $(TARGET) $(OBJS) $(LDFLAGS)
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@
