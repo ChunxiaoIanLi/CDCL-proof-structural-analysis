@@ -7,7 +7,7 @@ RM  = rm -rf
 WARNS = -Wall
 
 # Compiler and linker flags
-CPPFLAGS = -O3 -std=c++17 $(WARNS)
+CPPFLAGS = -O3 -std=c++17 -I/usr/include/python2.7/ $(WARNS)
 LDFLAGS = -s
 
 # Source files
@@ -30,7 +30,10 @@ $(MAIN_TARGET): $(OBJS) $(MAIN_OBJ)
 	$(CXX) $(CPPFLAGS) -o $(MAIN_TARGET) $(MAIN_OBJ) $(OBJS) $(LDFLAGS)
 
 $(PYTHON_BINDING_TARGET): $(OBJS) $(PYTHON_BINDING_OBJ)
-	$(CXX) -shared -Wl,-soname,$(PYTHON_BINDING_TARGET) -o $(PYTHON_BINDING_TARGET) $(PYTHON_BINDING_OBJ)
+	$(CXX) -shared -Wl,-soname,$(PYTHON_BINDING_TARGET) -o $(PYTHON_BINDING_TARGET) $(PYTHON_BINDING_OBJ) -lpython2.7
+
+$(PYTHON_BINDING_OBJ):
+	$(CXX) $(CPPFLAGS) -c -fPIC $(PYTHON_BINDING_SRC) -o $(PYTHON_BINDING_OBJ)
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@

@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <iostream>
 #include <vector>
-#include "paramComputation.h"
+#include "src/paramComputation.h"
 
 static int convertPyClausesToCpp(std::vector<std::vector<long long>>& cppClauses, PyObject* pyClauses) {
 	if (!PyList_Check(pyClauses)) return 1;
