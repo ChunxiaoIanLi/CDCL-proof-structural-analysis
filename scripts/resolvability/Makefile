@@ -7,32 +7,37 @@ RM  = rm -rf
 WARNS = -Wall
 
 # Compiler and linker flags
-CPPFLAGS = -g -O3 -std=c++17 $(WARNS)
+CPPFLAGS = -O3 -std=c++17 -fPIC -I../../../python2.7/ $(WARNS)
 LDFLAGS = -s
 
 # Source files
-SRC_DIR = .
-SRCS = \
-	$(wildcard $(SRC_DIR)/*.cpp)
+SRC_DIR = src
+MAIN_SRC = main.cpp
+PYTHON_BINDING_SRC = pythonBindings.cpp
+SRCS = $(wildcard $(SRC_DIR)/*.cpp)
 
 # Object files
-OBJS = $(foreach SRC, $(subst .cpp,.o,$(SRCS)), $(SRC:$(SRC_DIR)/%=%))
+MAIN_OBJ = $(subst .cpp,.o,$(MAIN_SRC))
+PYTHON_BINDING_OBJ = $(subst .cpp,.o,$(PYTHON_BINDING_SRC))
+OBJS = $(subst .cpp,.o,$(SRCS))
 
-TARGET = countResolvable
+MAIN_TARGET = countResolvable
+PYTHON_BINDING_TARGET = libmergeability.so
 
 .PHONY: all clean
 
-all: $(OUT_DIR) $(OBJ_DIR) $(TARGET) 
+$(MAIN_TARGET): $(OBJS) $(MAIN_OBJ)
+	$(CXX) $(CPPFLAGS) -o $(MAIN_TARGET) $(MAIN_OBJ) $(OBJS) $(LDFLAGS)
 
-run: $(TARGET)
-	$(TARGET)
+$(PYTHON_BINDING_TARGET): $(OBJS) $(PYTHON_BINDING_OBJ)
+	$(CXX) -shared -Wl,-soname,$(PYTHON_BINDING_TARGET) -o $(PYTHON_BINDING_TARGET) $(PYTHON_BINDING_OBJ) $(OBJS) -lpython2.7
 
-$(TARGET): $(OBJS)
-	$(CXX) -o $(TARGET) $(OBJS) $(CPPFLAGS) $(LDFLAGS)
+$(PYTHON_BINDING_OBJ):
+	$(CXX) $(CPPFLAGS) -c $(PYTHON_BINDING_SRC) -o $(PYTHON_BINDING_OBJ)
 
 %.o: %.cpp
 	$(CXX) $(CPPFLAGS) -c $< -o $@
 
 clean:
-	$(RM) $(TARGET) *.o
+	$(RM) $(MAIN_TARGET) $(PYTHON_BINDING_TARGET) $(MAIN_OBJ) $(PYTHON_BINDING_OBJ) $(SRC_DIR)/*.o
 
