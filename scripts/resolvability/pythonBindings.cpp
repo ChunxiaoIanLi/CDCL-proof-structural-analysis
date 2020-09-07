@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <iostream>
+#include <set>
 #include <vector>
 #include "src/paramComputation.h"
 
