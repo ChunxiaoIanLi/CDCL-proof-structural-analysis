@@ -58,9 +58,8 @@ void PythonMergeabilityInterface::_convertPyClausesToCpp(long long* pyClauses, l
 void PythonMergeabilityInterface::_convertPyVarSetToCpp(std::set<long long>& varSet, long long* pyVarSet) {
 	for (long long i = 0; pyVarSet[i] != 0; ++i) {
 		const long long var = std::abs(pyVarSet[i]);
-
 		// Filter out variables which do not appear in a clause (this should never happen, but just in case)
-		if (m_posClauseIndices[var - 1].size() != 0 || m_negClauseIndices[var - 1].size() != 0) continue;
+		if (m_posClauseIndices[var - 1].size() == 0 && m_negClauseIndices[var - 1].size() == 0) continue;
 		varSet.emplace(var);
 	}
 }
@@ -87,7 +86,7 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 	std::set<unsigned int> clausesToFilter;
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
 		for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
-			if (varSet.find(m_clauses[i][j]) == varSet.end()) {
+			if (varSet.find(std::abs(m_clauses[i][j])) == varSet.end()) {
 				clausesToFilter.emplace(i);
 				break;
 			}
@@ -96,13 +95,13 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 
 	// Copy allowed indices from lookup tables
 	for (long long i = 0; i < m_numVariables; ++i) {
-		for (unsigned int p_i = 0; p_i < m_posClauseIndices.size(); ++p_i) {
+		for (unsigned int p_i = 0; p_i < m_posClauseIndices[i].size(); ++p_i) {
 			if (clausesToFilter.find(m_posClauseIndices[i][p_i]) == clausesToFilter.end()) {
 				posClauseIndices[i].push_back(m_posClauseIndices[i][p_i]);
 			}
 		}
 
-		for (unsigned int n_i = 0; n_i < m_negClauseIndices.size(); ++n_i) {
+		for (unsigned int n_i = 0; n_i < m_negClauseIndices[i].size(); ++n_i) {
 			if (clausesToFilter.find(m_negClauseIndices[i][n_i]) == clausesToFilter.end()) {
 				negClauseIndices[i].push_back(m_negClauseIndices[i][n_i]);
 			}
