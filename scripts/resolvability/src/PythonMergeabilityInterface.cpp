@@ -42,7 +42,7 @@ double PythonMergeabilityInterface::getMergeabilityScoreNorm1() {
 
 double PythonMergeabilityInterface::getMergeabilityScoreNorm2() {
 	const double m = static_cast<double>(m_clauses.size());
-	return m_output.mergeabilityScore2 / (m * m);
+	return m_output.mergeabilityScore1 / (m * m);
 }
 
 // PRIVATE

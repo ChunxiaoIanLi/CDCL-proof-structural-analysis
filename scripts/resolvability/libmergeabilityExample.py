@@ -17,19 +17,21 @@ class PMI(object):
 		lib.PMI_calculateMergeability.argtypes = [ ctypes.c_void_p, ctypes.c_longlong * len(varSet) ]
 		lib.PMI_calculateMergeability(self.obj, arr)
 
+	# Normalize mergeability score by total number of resolvable pairs
 	def getMergeabilityScoreNorm1(self):
-		lib.getMergeabilityScoreNorm1.argtypes = [ ctypes.c_void_p ]
-		return lib.getMergeabilityScoreNorm1(self.obj)
+		lib.PMI_getMergeabilityScoreNorm1.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScoreNorm1(self.obj)
 
+	# Normalize mergeability score by m^2
 	def getMergeabilityScoreNorm2(self):
-		lib.getMergeabilityScoreNorm2.argtypes = [ ctypes.c_void_p ]
-		return lib.getMergeabilityScoreNorm2(self.obj)
+		lib.PMI_getMergeabilityScoreNorm2.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScoreNorm2(self.obj)
 
 # Configure ctypes to work with library functions
 lib.PMI_setClauses.restype = None
 lib.PMI_calculateMergeability.restype = None
-lib.getMergeabilityScoreNorm1.restype = ctypes.c_void_p
-lib.getMergeabilityScoreNorm2.restype = ctypes.c_void_p
+lib.PMI_getMergeabilityScoreNorm1.restype = ctypes.c_double
+lib.PMI_getMergeabilityScoreNorm2.restype = ctypes.c_double
 
 # Create object
 pmi = PMI()
@@ -49,10 +51,10 @@ pmi.calculateMergeability(varSet)
 print pmi.getMergeabilityScoreNorm1()
 print pmi.getMergeabilityScoreNorm2()
 print "------"
-print pmi.calculateMergeability([1,2,3,4,5,6,7,0])
+pmi.calculateMergeability([1,2,3,4,5,6,7,0])
 print pmi.getMergeabilityScoreNorm1()
 print pmi.getMergeabilityScoreNorm2()
 print "------"
-print pmi.calculateMergeability([1,3,5,6,7,0])
+pmi.calculateMergeability([1,3,5,6,7,0])
 print pmi.getMergeabilityScoreNorm1()
 print pmi.getMergeabilityScoreNorm2()
