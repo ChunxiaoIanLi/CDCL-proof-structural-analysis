@@ -45,7 +45,6 @@ private:
 	std::vector<std::vector<long long>> m_clauses;
 	std::vector<std::vector<unsigned int>> m_posClauseIndices;
 	std::vector<std::vector<unsigned int>> m_negClauseIndices;
-	std::vector<std::vector<unsigned int>> m_allClauseIndices;
 	ParamComputation::ResolvabilityMergeabilityOutput m_output;
 };
 

@@ -82,18 +82,6 @@ private:
 	);
 
 	/**
-	 * @brief Compute the variable-clause lookup table
-	 * @param allClauseIndices Address to write clause indices, with preallocated space for all variables
-	 * @param posClauseIndices Clause indices for positive literals
-	 * @param negClauseIndices Clause indices for negative literals
-	 */
-	static void computeVariableClauseLookupTable(
-		std::vector<std::vector<unsigned int>>& allClauseIndices,
-		std::vector<std::vector<unsigned int>>& posClauseIndices,
-		std::vector<std::vector<unsigned int>>& negClauseIndices
-	);
-
-	/**
 	 * @brief Callback function for resolvability computation
 	 * @param 1 the local number of mergeable literal pairs
 	 * @param 2 the clause with the positive resolving literal

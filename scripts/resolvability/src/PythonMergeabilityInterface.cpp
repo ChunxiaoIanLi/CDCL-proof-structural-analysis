@@ -75,11 +75,9 @@ void PythonMergeabilityInterface::_generateLookupTable() {
 	// Allocate memory
 	m_posClauseIndices = std::vector<std::vector<unsigned int>>(m_numVariables);
 	m_negClauseIndices = std::vector<std::vector<unsigned int>>(m_numVariables);
-	m_allClauseIndices = std::vector<std::vector<unsigned int>>(m_numVariables);
 
 	// Generate the lookup tables
 	ParamComputation::computeLiteralClauseLookupTable(m_posClauseIndices, m_negClauseIndices, m_clauses);
-	ParamComputation::computeVariableClauseLookupTable(m_allClauseIndices, m_posClauseIndices, m_negClauseIndices);
 
 	// Set state flag
 	m_dirtyLookupTable = false;

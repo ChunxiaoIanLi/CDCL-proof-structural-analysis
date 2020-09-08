@@ -66,50 +66,6 @@ void ParamComputation::computeLiteralClauseLookupTable(
 	}
 }
 
-void ParamComputation::computeVariableClauseLookupTable(
-	std::vector<std::vector<unsigned int>>& allClauseIndices,
-	std::vector<std::vector<unsigned int>>& posClauseIndices,
-	std::vector<std::vector<unsigned int>>& negClauseIndices
-) {
-	// Sort literal-clause lookup tables and generate sorted variable-clause lookup table
-	// O(n deg(v) log(deg(v)))
-	for (unsigned int i = 0; i < allClauseIndices.size(); ++i) {
-		// Sort the literal-clause lookup table for each variable
-		// O(deg(v) log(deg(v)))
-		std::sort(posClauseIndices[i].begin(), posClauseIndices[i].end());
-		std::sort(negClauseIndices[i].begin(), negClauseIndices[i].end());
-		
-		// Generate variable-clause lookup table by merging lookup tables
-		// O(deg(v))
-		unsigned int p_i = 0, n_i = 0;
-		while (p_i < posClauseIndices[i].size() && n_i < negClauseIndices[i].size()) {
-			if (p_i < n_i) {
-				allClauseIndices[i].push_back(posClauseIndices[i][p_i]);
-				++p_i;
-			} else if (p_i > n_i) {
-				allClauseIndices[i].push_back(negClauseIndices[i][n_i]);
-				++n_i;
-			} else {
-				allClauseIndices[i].push_back(posClauseIndices[i][p_i]);
-				++p_i;
-				++n_i;
-			}
-		}
-
-		// Finish merging lookup table for positive literals
-		while (p_i < posClauseIndices[i].size()) {
-			allClauseIndices[i].push_back(posClauseIndices[i][p_i]);
-			++p_i;
-		}
-
-		// Finish merging lookup table for negative literals
-		while (p_i < posClauseIndices[i].size()) {
-			allClauseIndices[i].push_back(negClauseIndices[i][n_i]);
-			++n_i;
-		}
-	}
-}
-
 void ParamComputation::forEachResolvable(
 	const std::vector<std::vector<unsigned int>>& posClauseIndices,
 	const std::vector<std::vector<unsigned int>>& negClauseIndices,
