@@ -96,8 +96,13 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 	hierarchical_tree.vs[current_node]['color'] = rgba((255, 245, 245), percent, 0.8)
 	hierarchical_tree.vs[current_node]['vertex_size'] = 200*percent
 
-	#color the node using its mergeability
-	print(g.vs())
+        #color the node using its mergeability
+        vertices= []
+        for v in g.vs():
+                vertices.append(int(v['name']) + 1)
+        vertices.append(0)
+        print(vertices)
+        print (pmi.calculateMergeability(vertices))
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
@@ -118,6 +123,8 @@ print(file)
 # Configure ctypes to work with library functions
 lib.PMI_setClauses.restype = None
 lib.PMI_calculateMergeability.restype = ctypes.c_longlong
+# Create object
+pmi = PMI()
 
 #output_directory = create_directory(file)
 clauses, m, n = read_file(file)
@@ -131,6 +138,8 @@ pmi.setClauses(clauses_list)
 g = igraph.Graph()
 g.add_vertices(n)
 g.add_edges(edge_list)
+for i in range(n):
+	g.vs[i]['name'] = i
 path = [0]
 
 hierarchical_tree = igraph.Graph()

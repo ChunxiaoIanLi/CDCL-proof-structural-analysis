@@ -35,7 +35,7 @@ def cnf_to_clauses_list(clauses):
 	clauses_list = []
 	for clause in clauses:
 		for lit in clause:
-			clauses_list.append(lit)
+			clauses_list.append(int(lit))
 		clauses_list.append(0)
 	return clauses_list
 
