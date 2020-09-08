@@ -30,6 +30,15 @@ def cnf_to_edge_set(clauses):
 
 # import itertools
 
+def cnf_to_clauses_list(clauses):
+	#[1, 2, 3, 0, 4, 2, 1, 0 ...]
+	clauses_list = []
+	for clause in clauses:
+		for lit in clause:
+			clauses_list.append(lit)
+		clauses_list.append(0)
+	return clauses_list
+
 
 
 

@@ -1,6 +1,6 @@
 import igraph
 import sys
-from cnf_to_edge_list import cnf_to_edge_list, read_file
+from cnf_to_edge_set import cnf_to_edge_set, read_file, cnf_to_clauses_list
 import os
 import numpy as np
 from random import randrange
@@ -84,16 +84,20 @@ def create_edge_list_hierarchical_tree(current_node, number_of_children, max_nod
 		edge_list.append([current_node, max_node-i])
 	return edge_list
 
-def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path):
+def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi):
 	#calculates community structure
 	vertex_clustering = g.community_multilevel()
 	#vertex_clustering = g.community_edge_betweenness().as_clustering()
 	#plot all sub-communities and saving them to files.
 	#plot_community_structure(vertex_clustering, path, output_directory)
 
+	#color the node using its modularity
 	percent = (g.modularity(vertex_clustering) + 0.5) / 1.5
 	hierarchical_tree.vs[current_node]['color'] = rgba((255, 245, 245), percent, 0.8)
 	hierarchical_tree.vs[current_node]['vertex_size'] = 200*percent
+
+	#color the node using its mergeability
+	print(g.vs())
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
@@ -105,7 +109,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 			current_node = current_max_node - c
 			temp_path = path[:]
 			temp_path.append(c)
-			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path)
+			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi)
 	return
 
 file = sys.argv[1]
@@ -119,6 +123,10 @@ lib.PMI_calculateMergeability.restype = ctypes.c_longlong
 clauses, m, n = read_file(file)
 edge_set = cnf_to_edge_set(clauses)
 edge_list = [list(e) for e in edge_set]
+clauses_list = cnf_to_clauses_list(clauses)
+
+# Load the clauses
+pmi.setClauses(clauses_list)
 
 g = igraph.Graph()
 g.add_vertices(n)
@@ -132,5 +140,5 @@ current_node = 0
 community_structure_style = set_community_structure_style(g)
 
 #compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, output_directory)
-compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path)
+compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi)
 plot_hierarchical_tree(hierarchical_tree, file)
