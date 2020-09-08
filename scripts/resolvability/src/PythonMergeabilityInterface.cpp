@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include "paramComputation.h"
+#include "mergeabilityCommon.h"
 
 // PUBLIC
 
@@ -15,7 +16,7 @@ void PythonMergeabilityInterface::initializeClauses(long long* pyClauses, long l
 	_convertPyClausesToCpp(pyClauses, size);
 }
 
-long long PythonMergeabilityInterface::calculateMergeability(long long* pyVarSet) {
+void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet) {
 	// Generate variable->clause lookup table
 	if (m_dirtyLookupTable) _generateLookupTable();
 
@@ -29,13 +30,19 @@ long long PythonMergeabilityInterface::calculateMergeability(long long* pyVarSet
 	_getLookupTablesForVarSet(posClauseIndices, negClauseIndices, varSet);
 
 	// Calculate mergeability over the acceptable clauses
-	long long totalNumResolvable = 0;
-	long long totalNumMergeable = 0;
-	ParamComputation::computeMergeability(
-		totalNumResolvable, totalNumMergeable, m_clauses, posClauseIndices, negClauseIndices
-	);
+	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
+	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
 
-	return totalNumMergeable;
+	ParamComputation::computeResolvable(&m_output, m_clauses, posClauseIndices, negClauseIndices);
+}
+
+double PythonMergeabilityInterface::getMergeabilityScoreNorm1() {
+	return m_output.mergeabilityScore1 / static_cast<double>(m_output.totalNumResolvable);
+}
+
+double PythonMergeabilityInterface::getMergeabilityScoreNorm2() {
+	const double m = static_cast<double>(m_clauses.size());
+	return m_output.mergeabilityScore2 / (m * m);
 }
 
 // PRIVATE

@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include "paramComputation.h"
 
 class PythonMergeabilityInterface {
 public:
@@ -18,7 +19,17 @@ public:
 	 * variable set
 	 * @param varSet The variables by which clauses should be filtered when computing mergeability
 	 */
-	long long calculateMergeability(long long* varSet);
+	void calculateMergeabilityScore(long long* varSet);
+
+	/**
+	 * @brief Get the mergeability score normalized by resolvability
+	 */
+	double getMergeabilityScoreNorm1();
+
+	/**
+	 * @brief Get the mergeability score normalized by m^2
+	 */
+	double getMergeabilityScoreNorm2();
 
 private:
 	void _convertPyClausesToCpp(long long* pyClauses, long long size);
@@ -35,6 +46,7 @@ private:
 	std::vector<std::vector<unsigned int>> m_posClauseIndices;
 	std::vector<std::vector<unsigned int>> m_negClauseIndices;
 	std::vector<std::vector<unsigned int>> m_allClauseIndices;
+	ParamComputation::ResolvabilityMergeabilityOutput m_output;
 };
 
 #endif // PY_MERGEABILITY_H

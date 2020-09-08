@@ -14,7 +14,17 @@ extern "C" {
 		interface->initializeClauses(pyClauses, size);
 	}
 
-	long long PMI_calculateMergeability(PythonMergeabilityInterface* interface, long long* varSet) {
-		return interface->calculateMergeability(varSet);
+	void PMI_calculateMergeability(PythonMergeabilityInterface* interface, long long* varSet) {
+		interface->calculateMergeabilityScore(varSet);
+	}
+
+	// Get mergeability score normalized by the total number of resolvable clauses
+	double PMI_getMergeabilityScoreNorm1(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScoreNorm1();
+	}
+
+	// Get mergeability score normalized by m^2
+	double PMI_getMergeabilityScoreNorm1(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScoreNorm2();
 	}
 }

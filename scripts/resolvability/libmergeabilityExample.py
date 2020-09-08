@@ -15,11 +15,21 @@ class PMI(object):
 	def calculateMergeability(self, varSet):
 		arr = (ctypes.c_longlong * len(varSet))(*varSet)
 		lib.PMI_calculateMergeability.argtypes = [ ctypes.c_void_p, ctypes.c_longlong * len(varSet) ]
-		return lib.PMI_calculateMergeability(self.obj, arr)
+		lib.PMI_calculateMergeability(self.obj, arr)
+
+	def getMergeabilityScoreNorm1(self):
+		lib.getMergeabilityScoreNorm1.argtypes = [ ctypes.c_void_p ]
+		return lib.getMergeabilityScoreNorm1(self.obj)
+
+	def getMergeabilityScoreNorm2(self):
+		lib.getMergeabilityScoreNorm2.argtypes = [ ctypes.c_void_p ]
+		return lib.getMergeabilityScoreNorm2(self.obj)
 
 # Configure ctypes to work with library functions
 lib.PMI_setClauses.restype = None
-lib.PMI_calculateMergeability.restype = ctypes.c_longlong
+lib.PMI_calculateMergeability.restype = None
+lib.getMergeabilityScoreNorm1.restype = ctypes.c_void_p
+lib.getMergeabilityScoreNorm2.restype = ctypes.c_void_p
 
 # Create object
 pmi = PMI()
