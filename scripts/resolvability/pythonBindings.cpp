@@ -24,7 +24,7 @@ extern "C" {
 	}
 
 	// Get mergeability score normalized by m^2
-	double PMI_getMergeabilityScoreNorm1(PythonMergeabilityInterface* interface) {
+	double PMI_getMergeabilityScoreNorm2(PythonMergeabilityInterface* interface) {
 		return interface->getMergeabilityScoreNorm2();
 	}
 }
