@@ -117,10 +117,8 @@ lib.PMI_calculateMergeability.restype = ctypes.c_longlong
 
 #output_directory = create_directory(file)
 clauses, m, n = read_file(file)
-edge_set = cnf_to_edge_list(clauses)
-#edge_list = list(cnf_to_edge_list(clauses))
+edge_set = cnf_to_edge_set(clauses)
 edge_list = [list(e) for e in edge_set]
-print(edge_list)
 
 g = igraph.Graph()
 g.add_vertices(n)
