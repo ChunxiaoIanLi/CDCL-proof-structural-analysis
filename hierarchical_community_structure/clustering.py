@@ -4,6 +4,23 @@ from cnf_to_edge_list import cnf_to_edge_list, read_file
 import os
 import numpy as np
 from random import randrange
+import ctypes
+lib = ctypes.CDLL('./libmergeability.so')
+
+# An object for working with the C/C++ library
+class PMI(object):
+	def __init__(self):
+		self.obj = lib.PMI_init()
+
+	def setClauses(self, clauses):
+		arr = (ctypes.c_longlong * len(clauses))(*clauses)
+		lib.PMI_setClauses.argtypes = [ ctypes.c_void_p, ctypes.c_longlong * len(clauses), ctypes.c_longlong ]
+		lib.PMI_setClauses(self.obj, arr, len(clauses))
+
+	def calculateMergeability(self, varSet):
+		arr = (ctypes.c_longlong * len(varSet))(*varSet)
+		lib.PMI_calculateMergeability.argtypes = [ ctypes.c_void_p, ctypes.c_longlong * len(varSet) ]
+		return lib.PMI_calculateMergeability(self.obj, arr)
 
 
 def rgba(color, percent, opacity):
@@ -40,8 +57,8 @@ def set_hierarchical_tree_style(hierarchical_tree):
 	visual_style = {}
 	visual_style["layout"] = layout
 	visual_style["bbox"] = (5000, 5000)
-	#visual_style["vertex_size"] = hierarchical_tree.vs['vertex_size']
-	#visual_style["vertex_color"] = hierarchical_tree.vs['color']
+	visual_style["vertex_size"] = hierarchical_tree.vs['vertex_size']
+	visual_style["vertex_color"] = hierarchical_tree.vs['color']
 	return visual_style
 
 def plot_community_structure(vertex_clustering, path, output_directory):
@@ -76,7 +93,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 
 	percent = (g.modularity(vertex_clustering) + 0.5) / 1.5
 	hierarchical_tree.vs[current_node]['color'] = rgba((255, 245, 245), percent, 0.8)
-	hierarchical_tree.vs[current_node]['vertex_size'] = 100*percent
+	hierarchical_tree.vs[current_node]['vertex_size'] = 200*percent
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
@@ -93,11 +110,17 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 
 file = sys.argv[1]
 print(file)
+
+# Configure ctypes to work with library functions
+lib.PMI_setClauses.restype = None
+lib.PMI_calculateMergeability.restype = ctypes.c_longlong
+
 #output_directory = create_directory(file)
 clauses, m, n = read_file(file)
 edge_set = cnf_to_edge_list(clauses)
 #edge_list = list(cnf_to_edge_list(clauses))
 edge_list = [list(e) for e in edge_set]
+print(edge_list)
 
 g = igraph.Graph()
 g.add_vertices(n)
