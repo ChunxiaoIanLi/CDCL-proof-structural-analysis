@@ -97,7 +97,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 	hierarchical_tree.vs[current_node]['vertex_size'] = 200*percent
 
 	#color the node using its mergeability
-	print(g.vs())
+	print(print(v) for v in g.vs())
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
