@@ -45,6 +45,14 @@ pmi.setClauses(clauses)
 varSet = [1,2,3,4,5,6,7,8,0]
 
 # Calculate mergeability
-print pmi.calculateMergeability(varSet)
+pmi.calculateMergeability(varSet)
+print pmi.getMergeabilityScoreNorm1()
+print pmi.getMergeabilityScoreNorm2()
+print "------"
 print pmi.calculateMergeability([1,2,3,4,5,6,7,0])
+print pmi.getMergeabilityScoreNorm1()
+print pmi.getMergeabilityScoreNorm2()
+print "------"
 print pmi.calculateMergeability([1,3,5,6,7,0])
+print pmi.getMergeabilityScoreNorm1()
+print pmi.getMergeabilityScoreNorm2()
