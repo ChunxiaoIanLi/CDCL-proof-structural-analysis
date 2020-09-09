@@ -87,28 +87,25 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 	std::vector<std::vector<unsigned int>>& posClauseIndices, std::vector<std::vector<unsigned int>>& negClauseIndices,
 	const std::set<long long>& varSet
 ) {
-	// Find clauses which contain variables outside of the variable set
-	std::set<unsigned int> clausesToFilter;
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
+		// Find clauses which contain variables outside of the variable set
+		bool clauseContainsOtherVars = false;
 		for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
 			if (varSet.find(std::abs(m_clauses[i][j])) == varSet.end()) {
-				clausesToFilter.emplace(i);
+				clauseContainsOtherVars = true;
 				break;
 			}
 		}
-	}
 
-	// Copy allowed indices from lookup tables
-	for (long long i = 0; i < m_numVariables; ++i) {
-		for (unsigned int p_i = 0; p_i < m_posClauseIndices[i].size(); ++p_i) {
-			if (clausesToFilter.find(m_posClauseIndices[i][p_i]) == clausesToFilter.end()) {
-				posClauseIndices[i].push_back(m_posClauseIndices[i][p_i]);
-			}
-		}
-
-		for (unsigned int n_i = 0; n_i < m_negClauseIndices[i].size(); ++n_i) {
-			if (clausesToFilter.find(m_negClauseIndices[i][n_i]) == clausesToFilter.end()) {
-				negClauseIndices[i].push_back(m_negClauseIndices[i][n_i]);
+		// Add to the lookup table if the clause is acceptable
+		if (!clauseContainsOtherVars) {
+			for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
+				const int var = m_clauses[i][j];
+				if (var > 0) { // The variable should never be zero
+					posClauseIndices[+var - 1].emplace_back(i);	
+				} else {
+					negClauseIndices[-var - 1].emplace_back(i);
+				}
 			}
 		}
 	}
