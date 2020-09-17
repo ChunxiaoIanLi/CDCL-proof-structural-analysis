@@ -12,9 +12,10 @@ def read_file(file):
 	clauses=[]
 	line = f.readline()
 	while line:
-	    l = line.split(" ")
-	    clauses.append(l[0:-1])
-	    line = f.readline()
+		if line[0] != 'c':
+			l = line.strip().split(" ")
+			clauses.append(l[0:-1])
+		line = f.readline()
 	f.close()
 	return clauses, m, n
 

@@ -20,8 +20,33 @@ class PMI(object):
 	def calculateMergeability(self, varSet):
 		arr = (ctypes.c_longlong * len(varSet))(*varSet)
 		lib.PMI_calculateMergeability.argtypes = [ ctypes.c_void_p, ctypes.c_longlong * len(varSet) ]
-		return lib.PMI_calculateMergeability(self.obj, arr)
+		lib.PMI_calculateMergeability(self.obj, arr)
 
+	# Normalize mergeability score by total number of resolvable pairs
+	def getMergeabilityScoreNorm1(self):
+		lib.PMI_getMergeabilityScoreNorm1.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScoreNorm1(self.obj)
+
+	# Normalize mergeability score by m^2
+	def getMergeabilityScoreNorm2(self):
+		lib.PMI_getMergeabilityScoreNorm2.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScoreNorm2(self.obj)
+
+def write_data(mergeability_data, modularity_data, file):
+	mergeability_filename = file + ".mergeability"
+	mergeability_f = open(mergeability_filename, "w")
+	for i in mergeability_data:
+		mergeability_f.write(",".join(i))
+		mergeability_f.write("\n")
+	mergeability_f.close()
+
+	modularity_filename = file + ".modularity"
+	modularity_f = open(modularity_filename, "w")
+	for i in modularity_data:
+		modularity_f.write(",".join(i))
+		modularity_f.write("\n")
+	modularity_f.close()
+	return
 
 def rgba(color, percent, opacity):
     '''assumes color is rgb between (0, 0, 0) and (255, 255, 255)'''
@@ -52,13 +77,22 @@ def set_community_structure_style(g):
 	visual_style["vertex_size"] = 1
 	return visual_style
 
-def set_hierarchical_tree_style(hierarchical_tree):
+def set_hierarchical_tree_style_modularity(hierarchical_tree):
 	layout = hierarchical_tree.layout_reingold_tilford(root=[0])
 	visual_style = {}
 	visual_style["layout"] = layout
 	visual_style["bbox"] = (5000, 5000)
-	visual_style["vertex_size"] = hierarchical_tree.vs['vertex_size']
-	visual_style["vertex_color"] = hierarchical_tree.vs['color']
+	visual_style["vertex_size"] = hierarchical_tree.vs['modularity_vertex_size']
+	visual_style["vertex_color"] = hierarchical_tree.vs['modularity_color']
+	return visual_style
+
+def set_hierarchical_tree_style_mergeability(hierarchical_tree):
+	layout = hierarchical_tree.layout_reingold_tilford(root=[0])
+	visual_style = {}
+	visual_style["layout"] = layout
+	visual_style["bbox"] = (5000, 5000)
+	visual_style["vertex_size"] = hierarchical_tree.vs['mergeability_vertex_size']
+	visual_style["vertex_color"] = hierarchical_tree.vs['mergeability_color']
 	return visual_style
 
 def plot_community_structure(vertex_clustering, path, output_directory):
@@ -73,8 +107,12 @@ def plot_community_structure(vertex_clustering, path, output_directory):
 	return
 
 def plot_hierarchical_tree(hierarchical_tree, file):
-	filename = file + ".svg"
-	hierarchical_tree_style = set_hierarchical_tree_style(hierarchical_tree)
+	filename = file + "_modularity.svg"
+	hierarchical_tree_style = set_hierarchical_tree_style_modularity(hierarchical_tree)
+	igraph.plot(hierarchical_tree, filename, **hierarchical_tree_style)
+	
+	filename = file + "_mergeability.svg"
+	hierarchical_tree_style = set_hierarchical_tree_style_mergeability(hierarchical_tree)
 	igraph.plot(hierarchical_tree, filename, **hierarchical_tree_style)
 	return
 
@@ -84,7 +122,7 @@ def create_edge_list_hierarchical_tree(current_node, number_of_children, max_nod
 		edge_list.append([current_node, max_node-i])
 	return edge_list
 
-def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi):
+def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data):
 	#calculates community structure
 	vertex_clustering = g.community_multilevel()
 	#vertex_clustering = g.community_edge_betweenness().as_clustering()
@@ -93,16 +131,24 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 
 	#color the node using its modularity
 	percent = (g.modularity(vertex_clustering) + 0.5) / 1.5
-	hierarchical_tree.vs[current_node]['color'] = rgba((255, 245, 245), percent, 0.8)
-	hierarchical_tree.vs[current_node]['vertex_size'] = 200*percent
+	hierarchical_tree.vs[current_node]['modularity_color'] = rgba((255, 245, 245), percent, 0.8)
+	hierarchical_tree.vs[current_node]['modularity_vertex_size'] = 200*percent
 
-        #color the node using its mergeability
-        vertices= []
-        for v in g.vs():
-                vertices.append(int(v['name']) + 1)
-        vertices.append(0)
-        print(vertices)
-        print (pmi.calculateMergeability(vertices))
+	#color the node using its mergeability
+	vertices= []
+	for v in g.vs():
+		vertices.append(int(v['name']) + 1)
+	vertices.append(0)
+	pmi.calculateMergeability(vertices)
+	percent = pmi.getMergeabilityScoreNorm1() / 0.5
+	hierarchical_tree.vs[current_node]['mergeability_color'] = rgba((255, 245, 245), percent, 0.8)
+	hierarchical_tree.vs[current_node]['mergeability_vertex_size'] = 2000*percent
+
+	if len(path) > len(mergeability_data):
+		mergeability_data.append([])
+		modularity_data.append([])
+	mergeability_data[len(path)-1].append(str(pmi.getMergeabilityScoreNorm1()))
+	modularity_data[len(path)-1].append(str(g.modularity(vertex_clustering)))
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
@@ -114,7 +160,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 			current_node = current_max_node - c
 			temp_path = path[:]
 			temp_path.append(c)
-			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi)
+			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi, mergeability_data, modularity_data)
 	return
 
 file = sys.argv[1]
@@ -122,7 +168,9 @@ print(file)
 
 # Configure ctypes to work with library functions
 lib.PMI_setClauses.restype = None
-lib.PMI_calculateMergeability.restype = ctypes.c_longlong
+lib.PMI_calculateMergeability.restype = None
+lib.PMI_getMergeabilityScoreNorm1.restype = ctypes.c_double
+lib.PMI_getMergeabilityScoreNorm2.restype = ctypes.c_double
 # Create object
 pmi = PMI()
 
@@ -146,8 +194,12 @@ hierarchical_tree = igraph.Graph()
 hierarchical_tree.add_vertices(1)
 current_node = 0
 
-community_structure_style = set_community_structure_style(g)
+mergeability_data=[]
+modularity_data=[]
+
+#community_structure_style = set_community_structure_style(g)
 
 #compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, output_directory)
-compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi)
+compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data)
 plot_hierarchical_tree(hierarchical_tree, file)
+write_data(mergeability_data, modularity_data, file)
