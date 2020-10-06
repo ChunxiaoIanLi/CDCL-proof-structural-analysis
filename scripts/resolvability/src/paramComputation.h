@@ -69,6 +69,12 @@ public:
 	 */
 	static void computeDegreeVector(std::vector<long long>& degreeVector, std::vector<std::vector<long long>>& clauses);
 
+	/**
+	 * @brief Reset the output object
+	 * @param resolvabilityMergeabilityOutput The output object to reset
+	 */
+	static void resetOutput(ResolvabilityMergeabilityOutput& resolvabilityMergeabilityOutput);
+
 private:
 	/**
 	 * @brief Compute the literal-clause lookup table

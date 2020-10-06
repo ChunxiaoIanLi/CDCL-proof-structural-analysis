@@ -30,6 +30,7 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 	_getLookupTablesForVarSet(posClauseIndices, negClauseIndices, varSet);
 
 	// Calculate mergeability over the acceptable clauses
+	ParamComputation::resetOutput(m_output);
 	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
 	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
 
@@ -41,8 +42,16 @@ double PythonMergeabilityInterface::getMergeabilityScoreNorm1() {
 }
 
 double PythonMergeabilityInterface::getMergeabilityScoreNorm2() {
-	const double m = static_cast<double>(m_clauses.size());
+	const double m = static_cast<double>(m_numClauses);
 	return m_output.mergeabilityScore1 / (m * m);
+}
+
+double PythonMergeabilityInterface::getPreResolutionClauseWidth() {
+	return m_output.preResolutionClauseWidth / static_cast<double>(m_numClauses);
+}
+
+double PythonMergeabilityInterface::getPostResolutionClauseWidth() {
+	return m_output.preResolutionClauseWidth / static_cast<double>(m_output.totalNumResolvable);
 }
 
 // PRIVATE
@@ -87,6 +96,7 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 	std::vector<std::vector<unsigned int>>& posClauseIndices, std::vector<std::vector<unsigned int>>& negClauseIndices,
 	const std::set<long long>& varSet
 ) {
+	m_numClauses = 0;
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
 		// Find clauses which contain variables outside of the variable set
 		bool clauseContainsOtherVars = false;
@@ -99,6 +109,7 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 
 		// Add to the lookup table if the clause is acceptable
 		if (!clauseContainsOtherVars) {
+			++m_numClauses;
 			for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
 				const int var = m_clauses[i][j];
 				if (var > 0) { // The variable should never be zero

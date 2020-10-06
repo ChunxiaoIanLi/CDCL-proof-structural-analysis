@@ -48,6 +48,15 @@ void ParamComputation::computeDegreeVector(std::vector<long long>& degreeVector,
 	std::sort(degreeVector.rbegin(), degreeVector.rend());
 }
 
+void ParamComputation::resetOutput(ResolvabilityMergeabilityOutput& resolvabilityMergeabilityOutput) {
+	resolvabilityMergeabilityOutput.preResolutionClauseWidth = 0;
+	resolvabilityMergeabilityOutput.postResolutionClauseWidth = 0;
+	resolvabilityMergeabilityOutput.totalNumResolvable = 0;
+	resolvabilityMergeabilityOutput.totalNumMergeable = 0;
+	resolvabilityMergeabilityOutput.mergeabilityScore1 = 0;
+	resolvabilityMergeabilityOutput.mergeabilityScore2 = 0;
+}
+
 // PRIVATE
 
 void ParamComputation::computeLiteralClauseLookupTable(
