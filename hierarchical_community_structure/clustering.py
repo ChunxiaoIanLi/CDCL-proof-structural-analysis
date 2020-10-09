@@ -5,7 +5,7 @@ import os
 import numpy as np
 from random import randrange
 import ctypes
-lib = ctypes.CDLL('./libmergeability.so')
+lib = ctypes.CDLL('/home/ianli/CDCL-proof-structural-analysis/scripts/resolvability/libmergeability.so')
 
 # An object for working with the C/C++ library
 class PMI(object):
@@ -46,6 +46,48 @@ def write_data(mergeability_data, modularity_data, file):
 		modularity_f.write(",".join(i))
 		modularity_f.write("\n")
 	modularity_f.close()
+
+	degree_filename = file + ".degree"
+	degree_f = open(degree_filename, "w")
+	for i in degree_data:
+		degree_f.write(",".join(i))
+		degree_f.write("\n")
+	degree_f.close()
+
+	community_size_filename = file + ".community_size"
+	community_size_f = open(community_size_filename, "w")
+	for i in community_size_data:
+		community_size_f.write(",".join(i))
+		community_size_f.write("\n")
+	community_size_f.close()
+
+	inter_edges_filename = file + ".inter_edges"
+	inter_edges_f = open(inter_edges_filename, "w")
+	for i in inter_edges_data:
+		inter_edges_f.write(",".join(i))
+		inter_edges_f.write("\n")
+	inter_edges_f.close()
+
+	inter_vars_filename = file + ".inter_vars"
+	inter_vars_f = open(inter_vars_filename, "w")
+	for i in inter_vars_data:
+		inter_vars_f.write(",".join(i))
+		inter_vars_f.write("\n")
+	inter_vars_f.close()
+
+	pre_width_filename = file + ".pre_width"
+	pre_width_f = open(pre_width_filename, "w")
+	for i in pre_width_data:
+		pre_width_f.write(",".join(i))
+		pre_width_f.write("\n")
+	pre_width_f.close()
+
+	post_width_filename = file + ".post_width"
+	post_width_f = open(post_width_filename, "w")
+	for i in post_width_data:
+		post_width_f.write(",".join(i))
+		post_width_f.write("\n")
+	post_width_f.close()
 	return
 
 def rgba(color, percent, opacity):
@@ -122,10 +164,31 @@ def create_edge_list_hierarchical_tree(current_node, number_of_children, max_nod
 		edge_list.append([current_node, max_node-i])
 	return edge_list
 
-def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data):
+def computer_intercommunity_edges(vertex_clustering):
+	crossing = vertex_clustering.crossing()
+	num_inter_edges = 0
+	for i in crossing:
+		if i == True:
+			num_inter_edges += 1
+	return num_inter_edges
+
+def computer_intercommunity_vars(g, vertex_clustering):
+	crossing = vertex_clustering.crossing()
+	var_occurrence = [0]*g.vcount()
+	es = g.es()
+
+	for i in range(len(crossing)):
+		if crossing[i] == True:
+			v1 = es[i].tuple[0]
+			v2 = es[i].tuple[1]
+			var_occurrence[v1] |= 1
+
+	return var_occurrence.count(1)
+
+def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data):
 	#calculates community structure
 	vertex_clustering = g.community_multilevel()
-	#vertex_clustering = g.community_edge_betweenness().as_clustering()
+
 	#plot all sub-communities and saving them to files.
 	#plot_community_structure(vertex_clustering, path, output_directory)
 
@@ -147,8 +210,20 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 	if len(path) > len(mergeability_data):
 		mergeability_data.append([])
 		modularity_data.append([])
+		degree_data.append([])
+		community_size_data.append([])
+		inter_edges_data.append([])
+		inter_vars_data.append([])
+		pre_width_data.append([])
+		post_width_data.append([])
 	mergeability_data[len(path)-1].append(str(pmi.getMergeabilityScoreNorm1()))
 	modularity_data[len(path)-1].append(str(g.modularity(vertex_clustering)))
+	degree_data[len(path)-1].append(str(len(vertex_clustering)))
+	community_size_data[len(path)-1].append(str(g.vcount()))
+	inter_edges_data[len(path)-1].append(str(computer_intercommunity_edges(vertex_clustering)))
+	inter_vars_data[len(path)-1].append(str(computer_intercommunity_vars(g, vertex_clustering)))
+	pre_width_data[len(path)-1].append(str(pmi.PMI_getPreResolutionClauseWidth()))
+	post_width_data[len(path)-1].append(str(pmi.PMI_getPostResolutionClauseWidth()))
 
 	if len(vertex_clustering) > 1:
 		#modifying hierarchical community structure tree
@@ -160,7 +235,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 			current_node = current_max_node - c
 			temp_path = path[:]
 			temp_path.append(c)
-			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi, mergeability_data, modularity_data)
+			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi, mergeability_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data)
 	return
 
 file = sys.argv[1]
@@ -171,11 +246,16 @@ lib.PMI_setClauses.restype = None
 lib.PMI_calculateMergeability.restype = None
 lib.PMI_getMergeabilityScoreNorm1.restype = ctypes.c_double
 lib.PMI_getMergeabilityScoreNorm2.restype = ctypes.c_double
+lib.PMI_getPreResolutionClauseWidth.restype = ctypes.c_double
+lib.PMI_getPostResolutionClauseWidth.restype = ctypes.c_double
 # Create object
 pmi = PMI()
 
-#output_directory = create_directory(file)
+
+output_directory = create_directory(file)
 clauses, m, n = read_file(file)
+print("n: {0}".format(n))
+print("m: {0}".format(m))
 edge_set = cnf_to_edge_set(clauses)
 edge_list = [list(e) for e in edge_set]
 clauses_list = cnf_to_clauses_list(clauses)
@@ -196,10 +276,17 @@ current_node = 0
 
 mergeability_data=[]
 modularity_data=[]
+degree_data=[]
+community_size_data=[]
+inter_edges_data=[]
+inter_vars_data=[]
+pre_width_data=[]
+post_width_data=[]
+
 
 #community_structure_style = set_community_structure_style(g)
 
 #compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, output_directory)
-compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data)
+compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeability_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data)
 plot_hierarchical_tree(hierarchical_tree, file)
 write_data(mergeability_data, modularity_data, file)
