@@ -5,8 +5,9 @@ def compute_modularity(m, vwpairs, expected_edge):
 	return q
 
 def generate_hierarchy_bottom_up(k, c, m, vwpairs, expected_edge, level):
-	if level == 1:
-		i = k - 1
+        i = 0
+        if level == 1:
+		i = k - 2
 		#initial total number of edges
 		m = (c * (k**2 - k) + (c**2 - c) * i * k)/2
 		#initial number of vw pairs, where v!=w and v, w are both from the same community.
@@ -17,7 +18,7 @@ def generate_hierarchy_bottom_up(k, c, m, vwpairs, expected_edge, level):
 
 	current_q = compute_modularity(m, vwpairs, expected_edge)
 	if level == 1:
-		print("level: {0} i: {1} k:{2} i/k: {3} q: {4}".format(level, k-1, k, float(k-1)/k, current_q))
+		print("level: {0} i: {1} k:{2} i/k: {3} q: {4}".format(level, i, k, float(i)/k, current_q))
 	
 	# print(m, vwpairs, expected_edge)
 	# print(current_q)
