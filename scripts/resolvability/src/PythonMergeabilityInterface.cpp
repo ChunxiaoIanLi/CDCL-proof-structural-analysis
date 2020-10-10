@@ -1,6 +1,7 @@
 #include "PythonMergeabilityInterface.h"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 #include "paramComputation.h"
 #include "mergeabilityCommon.h"
 
@@ -20,6 +21,11 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 	// Generate variable->clause lookup table
 	if (m_dirtyLookupTable) _generateLookupTable();
 
+	// Reset output values
+	ParamComputation::resetOutput(m_output);
+	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
+	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
+
 	// Read variable set
 	std::set<long long> varSet;
 	_convertPyVarSetToCpp(varSet, pyVarSet);
@@ -29,12 +35,15 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 	std::vector<std::vector<unsigned int>> negClauseIndices(m_numVariables);
 	_getLookupTablesForVarSet(posClauseIndices, negClauseIndices, varSet);
 
-	// Calculate mergeability over the acceptable clauses
-	ParamComputation::resetOutput(m_output);
-	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
-	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
+	// Save the pre-resolution clause width because this gets overwritten by computeResolvable
+	const long long preResolutionClauseWidth = m_output.preResolutionClauseWidth;
+	m_output.preResolutionClauseWidth = 0;
 
+	// Calculate mergeability over the acceptable clauses
 	ParamComputation::computeResolvable(&m_output, m_clauses, posClauseIndices, negClauseIndices);
+
+	// Load back the correct value of pre-resolution clause width
+	m_output.preResolutionClauseWidth = preResolutionClauseWidth;
 }
 
 double PythonMergeabilityInterface::getMergeabilityScoreNorm1() {
@@ -97,6 +106,7 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 	const std::set<long long>& varSet
 ) {
 	m_numClauses = 0;
+	m_output.preResolutionClauseWidth = 0;
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
 		// Find clauses which contain variables outside of the variable set
 		bool clauseContainsOtherVars = false;
@@ -110,6 +120,7 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 		// Add to the lookup table if the clause is acceptable
 		if (!clauseContainsOtherVars) {
 			++m_numClauses;
+			m_output.preResolutionClauseWidth += m_clauses[i].size();
 			for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
 				const int var = m_clauses[i][j];
 				if (var > 0) { // The variable should never be zero
