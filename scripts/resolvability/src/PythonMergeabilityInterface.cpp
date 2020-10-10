@@ -56,10 +56,16 @@ double PythonMergeabilityInterface::getMergeabilityScoreNorm2() {
 }
 
 double PythonMergeabilityInterface::getPreResolutionClauseWidth() {
+	// Return 0 if there are no clauses in the variable set
+	if (m_numClauses == 0) return 0;
+
 	return m_output.preResolutionClauseWidth / static_cast<double>(m_numClauses);
 }
 
 double PythonMergeabilityInterface::getPostResolutionClauseWidth() {
+	// Return 0 if there are no resolvable clauses
+	if (m_output.totalNumResolvable == 0) return 0;
+
 	return m_output.postResolutionClauseWidth / static_cast<double>(m_output.totalNumResolvable);
 }
 
