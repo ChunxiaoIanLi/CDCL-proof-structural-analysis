@@ -51,7 +51,7 @@ double PythonMergeabilityInterface::getPreResolutionClauseWidth() {
 }
 
 double PythonMergeabilityInterface::getPostResolutionClauseWidth() {
-	return m_output.preResolutionClauseWidth / static_cast<double>(m_output.totalNumResolvable);
+	return m_output.postResolutionClauseWidth / static_cast<double>(m_output.totalNumResolvable);
 }
 
 // PRIVATE
