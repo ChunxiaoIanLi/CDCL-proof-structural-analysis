@@ -24,15 +24,17 @@ worksheet.write(0, 6, 'i/k')
 worksheet.write(0, 7, 'q')
 
 
-k_s = [1000, 20000, 100, 5000]
-c_s = [2, 3, 4, 5, 10, 100]
-k_minuses = [1, 2, 3]
+k_s = [10, 30, 50]
+c_s = [2, 8, 15]
+k_minuses = [2, 4, 8, 16, 32]
 
 row = 1
 
 for k in k_s:
 	for c in c_s:
 		for k_minus in k_minuses:
+			if k_minus > k:
+				continue
 			col = 0
 			process = Popen(['python', './generate_hierarchy_bottom_up.py', str(k), str(c), str(k_minus)], stdout=PIPE)
 			(output, err) = process.communicate()

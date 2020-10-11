@@ -5,7 +5,7 @@ def compute_modularity(m, vwpairs, expected_edge):
 	return q
 
 def generate_hierarchy_bottom_up(k, c, m, vwpairs, expected_edge, level, k_minus):
-	if level == 5:
+	if level == 8:
 		return
 	i = 0
 	if level == 1:
