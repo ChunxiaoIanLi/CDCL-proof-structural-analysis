@@ -12,7 +12,7 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-workbook = xlsxwriter.Workbook('GetBottomUpData' + time.strftime("%Y%m%d-%H%M%S") + '.xlsx')
+workbook = xlsxwriter.Workbook('GetBottomUpData-' + time.strftime("%Y%m%d-%H%M%S") + '.xlsx')
 worksheet = workbook.add_worksheet()
 worksheet.write(0, 0, 'Arg k')
 worksheet.write(0, 1, 'Arg c')
@@ -34,7 +34,7 @@ for k in k_s:
 	for c in c_s:
 		for k_minus in k_minuses:
 			col = 0
-			process = Popen(['python', './generate_hierarchy_bottom_up.py', str(k), str(c)], stdout=PIPE)
+			process = Popen(['python', './generate_hierarchy_bottom_up.py', str(k), str(c), str(k_minus)], stdout=PIPE)
 			(output, err) = process.communicate()
 			exit_code = process.wait()
 			output = output.decode('utf-8')
