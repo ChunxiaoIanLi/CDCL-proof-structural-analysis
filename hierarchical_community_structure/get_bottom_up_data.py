@@ -1,7 +1,18 @@
 from subprocess import Popen, PIPE
 import xlsxwriter
+import signal
+import sys
+import time
 
-workbook = xlsxwriter.Workbook('GetBottomUpData.xlsx')
+def signal_handler(sig, frame):
+    print('You pressed Ctrl+C! Saving work in spreadsheet.')
+    workbook.close()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
+
+workbook = xlsxwriter.Workbook('GetBottomUpData' + time.strftime("%Y%m%d-%H%M%S") + '.xlsx')
 worksheet = workbook.add_worksheet()
 worksheet.write(0, 0, 'Arg k')
 worksheet.write(0, 1, 'Arg c')
@@ -13,9 +24,9 @@ worksheet.write(0, 6, 'i/k')
 worksheet.write(0, 7, 'q')
 
 
-k_s = [1000, 200000000, 100, 5000]
-c_s = [2, 3, 4, 5, 10, 100, 1000]
-k_minuses = [0, 1, 2, 3, 4]
+k_s = [1000, 20000, 100, 5000]
+c_s = [2, 3, 4, 5, 10, 100]
+k_minuses = [0, 1, 2, 3]
 
 row = 1
 
@@ -38,6 +49,8 @@ for k in k_s:
 				worksheet.write(row, 6, words[7])
 				worksheet.write(row, 7, words[9])
 
+				row = row + 1
 			row = row + 1
 
 workbook.close()
+
