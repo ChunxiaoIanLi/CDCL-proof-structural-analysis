@@ -1,5 +1,6 @@
 #include "src/paramComputation.h"
 #include "src/PythonMergeabilityInterface.h"
+#include <iostream>
 
 extern "C" {
 	PythonMergeabilityInterface* PMI_init() {
@@ -14,8 +15,18 @@ extern "C" {
 		interface->initializeClauses(pyClauses, size);
 	}
 
+	void PMI_calculate(PythonMergeabilityInterface* interface, long long* varSet, int clauseFilterMode) {
+		interface->calculateMergeabilityScore(varSet, clauseFilterMode);
+	}
+
+	/// @deprecated Use PMI_calculate instead
 	void PMI_calculateMergeability(PythonMergeabilityInterface* interface, long long* varSet) {
-		interface->calculateMergeabilityScore(varSet);
+		PMI_calculate(interface, varSet, 0);
+	}
+
+	// Get the total number of overlapping literals in resolvable clause pairs
+	long PMI_getMergeability(PythonMergeabilityInterface* interface) {
+		return interface->getMergeability();
 	}
 
 	// Get mergeability score normalized by the total number of resolvable clauses
