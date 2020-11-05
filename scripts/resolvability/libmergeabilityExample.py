@@ -13,6 +13,9 @@ pmi.setClauses(clauses)
 # Put the variable set in a zero-terminated array
 varSet = [1,2,3,4,5,6,7,8,0]
 
+# Clause filtering mode:
+# 0: Don't accept any clauses with a variable outside of the variable set
+# 1: Copy the subset of each clause which occurs in the variable set
 clauseFilterMode = 0
 
 # Calculate mergeability
