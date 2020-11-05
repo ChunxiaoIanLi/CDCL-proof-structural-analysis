@@ -15,8 +15,8 @@ public:
 	void initializeClauses(long long* pyClauses, long long size);
 
 	/**
-	 * @brief Calculate the total number of mergeable literal pairs over a subset of clauses specified by a given variable set
-	 * @param varSet The variables by which clauses should be filtered when computing mergeability
+	 * @brief Calculate instance parameters over a subset of clauses specified by a given variable set
+	 * @param varSet The variables by which clauses should be filtered when performing computations
 	 * @param clauseFilterMode The algorithm to use when filtering clauses
 	 *     0: Don't accept any clauses with a variable outside of the variable set
 	 *     1: Copy the subset of each clause which occurs in the variable set
