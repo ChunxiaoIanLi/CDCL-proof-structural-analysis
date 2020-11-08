@@ -15,11 +15,18 @@ public:
 	void initializeClauses(long long* pyClauses, long long size);
 
 	/**
-	 * @brief Calculate the total number of mergeable literal pairs over the subset of clauses containing only variables in the
-	 * variable set
-	 * @param varSet The variables by which clauses should be filtered when computing mergeability
+	 * @brief Calculate instance parameters over a subset of clauses specified by a given variable set
+	 * @param varSet The variables by which clauses should be filtered when performing computations
+	 * @param clauseFilterMode The algorithm to use when filtering clauses
+	 *     0: Don't accept any clauses with a variable outside of the variable set
+	 *     1: Copy the subset of each clause which occurs in the variable set
 	 */
-	void calculateMergeabilityScore(long long* varSet);
+	void calculateMergeabilityScore(long long* varSet, int clauseFilterMode);
+
+	/**
+	 * @brief Get the total number of overlapping literals in resolvable clause pairs
+	 */
+	long getMergeability();
 
 	/**
 	 * @brief Get the mergeability score normalized by resolvability
@@ -49,8 +56,10 @@ private:
 		std::vector<std::vector<unsigned int>>& posClauseIndices, std::vector<std::vector<unsigned int>>& negClauseIndices,
 		const std::set<long long>& varSet
 	);
+	void _copyClausesForVarSet(std::vector<std::vector<long long>>& clausesCopy, const std::set<long long>& varSet);
 
 	bool m_dirtyLookupTable = false;
+	bool m_useSubsetCopy = false;
 	long long m_numVariables = 0;
 	long long m_numClauses = 0;
 	std::vector<std::vector<long long>> m_clauses;
