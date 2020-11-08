@@ -1,9 +1,9 @@
 import igraph
 
-n_s = [10, 100, 1000]
-p_s = [0.1, 0.5, 0.9]
+n_s = [1000]
+p_s = [0.05]
 # Size of the node communities
-k_s = [3, 4]
+k_s = [10]
 
 for n in n_s:
     for p in p_s:
@@ -12,19 +12,32 @@ for n in n_s:
             v_s = [vertex.index for vertex in g.vs]
             original_v_count = len(v_s)
             for v in v_s:
-                g.add_vertices(k)
-                new_v_start = original_v_count + v * k
-                new_v_end = original_v_count + (v + 1) * k - 1
-                g.add_edges([(v, new_v_start)])
+                g.add_vertices(k - 1)
+                new_v_start = original_v_count + v * (k - 1)
+                new_v_end = original_v_count + (v + 1) * (k - 1)
+                # Connect new nodes with v
+                for original_v_index in range(new_v_start, new_v_end):
+                    g.add_edges([(v, original_v_index)])
+                # Connect new nodes with each other
                 new_v_index = new_v_start
-                while new_v_index < new_v_end:
-                    for v2 in range(new_v_index + 1, new_v_end + 1):
+                while new_v_index < new_v_end - 1:
+                    for v2 in range(new_v_index + 1, new_v_end):
                         g.add_edges([(new_v_index, v2)])
                     new_v_index += 1
 
             file = open('n' + str(n) + 'p' + str(int(p * 100)) + 'k' + str(k) + '.cnf', 'w+')
-            file.write('p cnf ' + str(len(g.vs)) + ' ' + str(len(g.es)) + '\n')
+            filelines = ''
+            filelines += 'p cnf ' + str(len(g.vs)) + ' ' + str(len(g.es)) + '\n'
             for e in g.es:
-                file.write(str(e.source) + ' ' + str(e.target) + ' 0\n')
+                filelines += str(e.source) + ' ' + str(e.target) + ' 0\n'
+            file.write(filelines)
             file.close()
-            igraph.plot(g)
+
+            layout = g.layout_lgl()
+            visual_style = {}
+            visual_style["layout"] = layout
+            visual_style["bbox"] = (5000, 5000)
+            visual_style["vertex_size"] = 20
+
+            igraph.plot(g, **visual_style)
+            # igraph.plot(g)
