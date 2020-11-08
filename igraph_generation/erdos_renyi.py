@@ -29,7 +29,7 @@ for n in n_s:
             filelines = ''
             filelines += 'p cnf ' + str(len(g.vs)) + ' ' + str(len(g.es)) + '\n'
             for e in g.es:
-                filelines += str(e.source) + ' ' + str(e.target) + ' 0\n'
+                filelines += str(e.source + 1) + ' ' + str(e.target + 1) + ' 0\n'
             file.write(filelines)
             file.close()
 
