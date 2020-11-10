@@ -16,11 +16,11 @@ file.close()
 
 new_lines = ''
 for vertex in range(1, num_vars + 1):
-    new_lines += str(vertex) + ' '
+    new_lines += str(vertex + 1) + ' '
     start = (k - 1) * vertex + num_vars
     end = (k - 1) * (vertex + 1) + num_vars
     for x in range(start, end):
-        new_lines += str(x) + ' '
+        new_lines += str(x + 1) + ' '
     new_lines += '0 \n'
 
 new_filename = filename.split('.')[0] + '_k.cnf'
