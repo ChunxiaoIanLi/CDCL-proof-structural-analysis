@@ -12,8 +12,6 @@ for line in file.readlines():
         num_vars = int(line.split(' ')[2])
         break
 
-file.close()
-
 new_lines = ''
 for vertex in range(1, num_vars + 1):
     new_lines += str(vertex + 1) + ' '
@@ -23,8 +21,16 @@ for vertex in range(1, num_vars + 1):
         new_lines += str(x + 1) + ' '
     new_lines += '0 \n'
 
+new_num_vars = k * num_vars
 new_filename = filename.split('.')[0] + '_k.cnf'
-copyfile(filename, new_filename)
-file = open(new_filename, 'a')
-file.write(new_lines)
+new_file = open(new_filename, 'w+')
+replaced = False
+for index, line in enumerate(file):
+    if not replaced and line.split(' ')[0] == 'p':
+        new_file.write('p cnf ' + str(new_num_vars) + ' ' + line.split(' ')[3])
+    else:
+        replace = True
+        new_file.write(line)
+
 file.close()
+new_file.close()
