@@ -1,5 +1,6 @@
 import igraph
 import random
+import sys
 
 random.seed(2323)
 
@@ -38,11 +39,11 @@ for n in n_s:
             file.write(filelines)
             file.close()
 
-            layout = g.layout_lgl()
-            visual_style = {}
-            visual_style["layout"] = layout
-            visual_style["bbox"] = (5000, 5000)
-            visual_style["vertex_size"] = 20
+            if len(sys.argv) > 1 and sys.argv[1] == 'plot':
+                layout = g.layout_lgl()
+                visual_style = {}
+                visual_style["layout"] = layout
+                visual_style["bbox"] = (5000, 5000)
+                visual_style["vertex_size"] = 20
 
-            igraph.plot(g, **visual_style)
-            # igraph.plot(g)
+                igraph.plot(g, **visual_style)
