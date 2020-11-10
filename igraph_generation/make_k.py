@@ -1,5 +1,4 @@
 import sys
-from shutil import copyfile
 
 filename = sys.argv[1]
 k = int(sys.argv[2])
@@ -11,6 +10,7 @@ for line in file.readlines():
     if line[0] == 'p':
         num_vars = int(line.split(' ')[2])
         break
+file.close()
 
 new_lines = ''
 for vertex in range(1, num_vars + 1):
@@ -25,7 +25,8 @@ new_num_vars = k * num_vars
 new_filename = filename.split('.')[0] + '_k.cnf'
 new_file = open(new_filename, 'w+')
 replaced = False
-for index, line in enumerate(file):
+file = open(filename, 'r')
+for line in file.readlines():
     if not replaced and line.split(' ')[0] == 'p':
         new_file.write('p cnf ' + str(new_num_vars) + ' ' + line.split(' ')[3])
     else:
