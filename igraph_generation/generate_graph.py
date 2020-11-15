@@ -49,6 +49,12 @@ for n in n_s:
     file.write(filelines)
     file.close()
 
+    # file = open('n' + str(n) + 'k' + str(k) + '.cnf', 'w+')
+    # file.write('p cnf ' + str(len(g.vs)) + ' ' + str(len(g.es)) + '\n')
+    # for e in g.es:
+    #     file.write(str(e.source + 1) + ' ' + str(e.target + 1) + ' 0\n')
+    # file.close()
+
     if len(sys.argv) > 1 and sys.argv[1] == 'plot':
         layout = g.layout_lgl()
         visual_style = {}
