@@ -2,39 +2,24 @@ import igraph
 import networkx as nx
 import random
 import sys
-
-
-def vname(v, i):
-    return v * L + i
-
+import math
 
 random.seed(2323)
 
 n_s = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
-d = 3  # Random graph degree
-L = 7  # Fatness
 
 for n in n_s:
-    k = 1
-    output = 2
+    k = int(math.log(n))
 
-    while output < n:
-        k += 1
-        output = (2**k)/k
-
-    gp = nx.random_regular_graph(d, n, 42)
+    gp = nx.random_regular_graph(k, n, 2323)
 
     e = []
     g = igraph.Graph()
-    for v in sorted(gp.nodes()):
-        for i in range(L):
-            for j in range(i):
-                e.append((vname(v, j), vname(v, i)))
 
     for (u, v) in gp.edges():
-        e.append((vname(u, 0), vname(v, 0)))
+        e.append((u, v))
 
-    g.add_vertices(L * n)
+    g.add_vertices(n)
     g.add_edges(e)
 
     # g = igraph.Graph.Erdos_Renyi(n, p)
@@ -56,7 +41,7 @@ for n in n_s:
                     g.add_edges([(new_v_index, v2)])
                 new_v_index += 1
 
-    file = open('n' + str(n) + 'p' + str(int(p * 100)) + 'k' + str(k) + '.cnf', 'w+')
+    file = open('n' + str(n) + 'k' + str(k) + '.cnf', 'w+')
     filelines = ''
     filelines += 'p cnf ' + str(len(g.vs)) + ' ' + str(len(g.es)) + '\n'
     for e in g.es:
