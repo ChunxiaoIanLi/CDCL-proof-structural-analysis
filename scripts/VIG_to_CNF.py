@@ -30,13 +30,15 @@ def vecsum(vec):
 	return sum
 
 def pick_k_lits(dv, k):
+	# TODO: random.choices()
 	cummulative_vec = generateCummulative(dv)
 	k_lits = []
 	v_sum = vecsum(dv)
 	for i in range(k):
-		r = random.randint(0, v_sum)
+		r = random.randint(0, v_sum - 1)
+		# TODO: binary search or search for python functions that do this
 		for v in range(len(cummulative_vec)):
-			if r <= cummulative_vec[v]:
+			if r < cummulative_vec[v]:
 				polarity=random.randint(0,1)
 				if polarity == 0:
 					k_lits.append(-1*(v+1))
@@ -51,19 +53,22 @@ def is_clique(g, k_lits):
 	for i in k_lits:
 		vertices.append(abs(i)-1)
 
+	# TODO: perhaps use g.es.select(_within=vertices) and check the number of edges
 	subgraph = g.subgraph(vertices)
-	if subgraph.ecount() == (subgraph.vcount()*(subgraph.vcount()-1)/2):
-		return True
-	return False
+	return subgraph.ecount() == (subgraph.vcount()*(subgraph.vcount()-1)/2)
 
 def mark_visited(g, k_lits):
+	vertices = []
 	for i in k_lits:
-		g.vs[abs(i)-1]['visited'] = True
+		vertices.append(abs(i)-1)
+	edges_in_clique = g.es.select(_within=vertices)
+	for i in edges_in_clique:
+		i['visited'] = True
 	return
 
 def all_edges_visited(g):
-	for i in range(g.vcount()):
-		if g.vs[i]['visited'] == False:
+	for e in g.es:
+		if e["visited"] == False:
 			return False
 	return True
 
@@ -79,8 +84,8 @@ def print_cnf(cnf, n, m):
 	return
 
 def reset_visited_flag(g):
-	for i in range(g.vcount()):
-		g.vs[i]['visited'] = False
+	for e in g.es:
+		e["visited"] = False
 	return
 
 # g: VIG
@@ -115,16 +120,19 @@ def VIG_to_CNF(g, m, k):
 		reset_visited_flag(g)
 		trial+=1
 
+n = int(sys.argv[1])
+m = int(sys.argv[2])
+k = int(sys.argv[3])
+p = float(sys.argv[4])
 
-m = int(sys.argv[1])
-k = int(sys.argv[2])
-p = float(sys.argv[3])
-
-g = igraph.Graph.Erdos_Renyi(300, p)
+g = igraph.Graph.Erdos_Renyi(n, p)
 n = g.vcount()
 for i in range(n):
 	g.vs[i]['name'] = i
-	g.vs[i]['visited'] = False
+	#g.vs[i]['visited'] = False
+
+for e in g.es:
+	e["visited"] = False
 
 layout = g.layout("large")
 visual_style = {}

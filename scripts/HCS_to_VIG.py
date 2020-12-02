@@ -29,32 +29,36 @@ def get_zero_adjacency_matrix(n):
 	return zero_adjacency_matrix
 
 def combine_adjacency_matrices(subgraphs):
+	# TODO: if we pass in the sum of the size of the subgraphs, then we can handle subcommunities of various sizes
 	combined_zero_adjacency_matrix = get_zero_adjacency_matrix(len(subgraphs[0])*len(subgraphs))
 	for index in range(len(subgraphs)):
-		for each_row in range(len(subgraphs[index])):
-			for each_column in range(len(subgraphs[index])):
-				combined_zero_adjacency_matrix[index*len(subgraphs[index])+each_row]\
-								[index*len(subgraphs[index])+each_column] \
-			  	= subgraphs[index][each_row][each_column]
+		for row in range(len(subgraphs[index])):
+			for column in range(len(subgraphs[index])):
+				combined_zero_adjacency_matrix[index*len(subgraphs[index])+row]\
+								              [index*len(subgraphs[index])+column] \
+			  	= subgraphs[index][row][column]
 
 	# At this point, combined_zero_adjacency_matrix is an 
 	# all 0 matrix except for the diagonal being the subcommunities to combine
 	return combined_zero_adjacency_matrix
 
 def add_edges_to_combined_zero_adjacency_matrix(adjacency_matrix, inter_edges, degree):
-	# there are degree**2-degree number of empty cubes in the upper half of the matrix
-	# so the expected number of 1's per cube is inter_edges/(degree**2-degree)
-	# so the expected number of 1's per row per cube is (inter_edges/(degree**2-degree))/(len(adjacency_matrix)/degree)
+	# there are (degree**2-degree)/2 number of empty cubes in the upper half of the matrix
+	# so the expected number of 1's per cube is inter_edges/((degree**2-degree)/2)
+	# so the expected number of 1's per row per cube is (inter_edges/((degree**2-degree)/2))/	
 	subcommunity_size = len(adjacency_matrix)/degree
-	expected_ones_per_cube = inter_edges/(degree**2-degree)
+	expected_ones_per_cube = inter_edges/((degree**2-degree)/2)
 	expected_ones_per_row_per_cube = expected_ones_per_cube/subcommunity_size
 	probability_of_edge_per_cell = expected_ones_per_row_per_cube/subcommunity_size
-	for index in range(degree-1):
-		for each_row in range(subcommunity_size):
-			for each_column in range(subcommunity_size):
+	for row in range(len(adjacency_matrix)):
+		index = row/subcommunity_size
+		for column in range(len(adjacency_matrix)):
+			is_diagonal = (index*subcommunity_size < row and row < (index+1)*subcommunity_size) and (index*subcommunity_size < column and column < (index+1)*subcommunity_size)
+			if not is_diagonal:
 				if random.random() < probability_of_edge_per_cell:
-					adjacency_matrix[index*subcommunity_size+each_row][(index+1)*subcommunity_size+each_column] = 1
-					adjacency_matrix[(index+1)*subcommunity_size+each_column][index*subcommunity_size+each_row] = 1
+					adjacency_matrix[row][column] = 1
+					adjacency_matrix[column][row] = 1
+
 	return adjacency_matrix
 
 def count_inter_vars(adjacency_matrix, degree):
@@ -63,10 +67,10 @@ def count_inter_vars(adjacency_matrix, degree):
 
 	# a variable v is an inter-community variable as long as there is
 	# a 1 in row adjacency_matrix[v] (except the diagonal)
-	for each_row in range(subcommunity_size):
-		index = each_row/subcommunity_size
-		for each_column in range(len(adjacency_matrix)):
-			if adjacency_matrix[each_row][each_column] == 1 and (each_column < index * subcommunity_size or each_column > (index+1) * subcommunity_size):
+	for row in range(subcommunity_size):
+		index = row/subcommunity_size
+		for column in range(len(adjacency_matrix)):
+			if adjacency_matrix[row][column] == 1 and (column < index * subcommunity_size or column > (index+1) * subcommunity_size):
 				inter_vars+=1
 				break
 	return inter_vars
@@ -112,9 +116,9 @@ def generate_VIG(level, depth, leaf_community_size, inter_vars, inter_edges, mod
 		if (current_inter_vars - 2) < actual_inter_vars and actual_inter_vars < (current_inter_vars + 2):
 			# check current_modularity
 			# switch off checking for modularity
-			# actual_modularity = compute_modularity(updated_adjacency_matrix, current_degree)
-			# if (current_modularity - 0.1) < actual_modularity and actual_modularity < (current_modularity + 0.1):
-			break
+			actual_modularity = compute_modularity(updated_adjacency_matrix, current_degree)
+			if (current_modularity - 0.1) < actual_modularity and actual_modularity < (current_modularity + 0.1):
+				break
 		iteration+=1
 
 	return updated_adjacency_matrix
@@ -129,4 +133,4 @@ degree = [3, 3, 3, 3, 3]
 
 adjacency_matrix = generate_VIG(1, depth, leaf_community_size, inter_vars, inter_edges, modularity, degree)
 g = igraph.Graph.Adjacency(adjacency_matrix)
-print(adjacency_matrix)
+print_matrix(adjacency_matrix)
