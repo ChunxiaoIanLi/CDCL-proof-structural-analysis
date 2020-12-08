@@ -173,6 +173,18 @@ def compute_phase_two_clauses(g, k, m):
 		clauses.append(clause)	
 	return clauses
 
+def count_binary_ternary(clauses):
+	binary_counter = 0
+	ternary_counter = 0
+	for c in clauses:
+		if len(c) == 2:
+			binary_counter+=1
+		if len(c) == 3:
+			ternary_counter+=1
+	print("binary {0}".format(binary_counter))
+	print("ternary {0}".format(ternary_counter))
+	return
+
 # g: VIG
 # m: number of clauses to generate
 # k: k-sat
@@ -189,6 +201,8 @@ def VIG_to_CNF(g, m, k):
 	# Phase 1: generate clauses such that every edge appears in some clauses
 	while True:
 		phase_one_clauses = compute_phase_one_clauses(g, k)
+		count_binary_ternary(phase_one_clauses)
+		# add an early exist if len(phase_one_clauses) - m << 0, proportion to m
 		print("Phase 1: used {0}/{1} clauses to cover all edges.".format(len(phase_one_clauses), m))
 		if len(phase_one_clauses) <= m:
 			cnf = phase_one_clauses
@@ -198,6 +212,7 @@ def VIG_to_CNF(g, m, k):
 	# Phase 2: assigning remaining edges
 	print("Phase 2: generating remaining clauses.")
 	phase_two_clauses = compute_phase_two_clauses(g, k, m - len(phase_one_clauses))
+	count_binary_ternary(phase_two_clauses)
 	cnf += phase_two_clauses
 	return cnf
 
