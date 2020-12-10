@@ -52,6 +52,21 @@ def same_community(u, v, community_id_upper_bounds):
 		previous = current
 	return False
 
+def pick_inter_triangle(g, u, random_inter_vars, community_id_upper_bounds):
+	while True:
+		v = random.sample(random_inter_vars, 1)[0]
+		if not same_community(u, v, community_id_upper_bounds):
+			w = random.sample(random_inter_vars, 1)[0]
+			if same_community(u, w, community_id_upper_bounds):
+				if g.get_eid(u, w, directed=False, error=False) >= 0:
+					return v, w
+			elif same_community(v, w, community_id_upper_bounds):
+				if g.get_eid(v, w, directed=False, error=False) >= 0:
+					return v, w
+			else:
+				return v, w
+
+
 
 def add_edges_to_combined_disconnected_subgraphs(g, inter_vars_fraction, community_id_upper_bounds):
 
@@ -60,7 +75,7 @@ def add_edges_to_combined_disconnected_subgraphs(g, inter_vars_fraction, communi
 	# 	- range(a, b): b is exclusive
 	# 	- picking inter_vars distinct variables
 	inter_vars = int(g.vcount()*inter_vars_fraction)
-	inter_edges = int(inter_vars*math.log(inter_vars)/2 * 2)
+	inter_edges = int(inter_vars*math.log(inter_vars)/2)
 	while True:
 		# phase 1: for each uncovered vertex, connect it to a vertex in another community
 		# print("phase 1 starts")
@@ -68,35 +83,40 @@ def add_edges_to_combined_disconnected_subgraphs(g, inter_vars_fraction, communi
 		random_inter_vars = random.sample(range(0, g.vcount()), inter_vars)
 		uncovered = set(random_inter_vars)
 		# TODO: add an array for edges_to_add and add them all at once
-		u_iteration = 1
 		while len(uncovered) != 0:
 			# u is a random vertex in uncovered
 			u = uncovered.pop()
-			v_iteration = 1
-			while True:
-				v = random.sample(random_inter_vars, 1)[0]
-				if not same_community(u, v, community_id_upper_bounds):
-					uncovered.discard(v)
-					g.add_edge(u, v)
-					inter_edges_count+=1
-					#put a break
-					break
-				v_iteration+=1
-				if v_iteration > 20:
-					break
-			u_iteration+=1
-			if u_iteration > 20:
-				break
+			v, w = pick_inter_triangle(g, u, random_inter_vars, community_id_upper_bounds)
+			if g.get_eid(u, v, directed=False, error=False) < 0:
+				uncovered.discard(v)
+				g.add_edge(u, v)
+				inter_edges_count+=1
+			if g.get_eid(u, w, directed=False, error=False) < 0:
+				uncovered.discard(w)
+				g.add_edge(u, w)
+				inter_edges_count+=1
+			if g.get_eid(v, w, directed=False, error=False) < 0:
+				uncovered.discard(v)
+				uncovered.discard(w)
+				g.add_edge(v, w)
+				inter_edges_count+=1
 		# print("phase 1 done")
 		# print("phase 2 started")
 		# phase 2: randomly assign the remaining edges
 		# TODO: instead of randomly picking u and v, we can fix u first and randomly picking a v from a different community
 		if inter_edges >= inter_edges_count:
-			for e in range(inter_edges - inter_edges_count):
-				(u, v) = random.sample(random_inter_vars, 2)
-				#print(same_community(u, v, community_id_upper_bounds))
-				if not same_community(u, v, community_id_upper_bounds):
+			while inter_edges - inter_edges_count > 0:
+				u = random.sample(random_inter_vars, 1)[0]
+				v, w = pick_inter_triangle(g, u, random_inter_vars, community_id_upper_bounds)
+				if g.get_eid(u, v, directed=False, error=False) < 0:
 					g.add_edge(u, v)
+					inter_edges_count+=1
+				if g.get_eid(u, w, directed=False, error=False) < 0:
+					g.add_edge(u, w)
+					inter_edges_count+=1
+				if g.get_eid(v, w, directed=False, error=False) < 0:
+					g.add_edge(v, w)
+					inter_edges_count+=1
 			# print("phase 2 done")
 			break
 	return g
