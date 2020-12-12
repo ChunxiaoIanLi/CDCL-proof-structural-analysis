@@ -1,6 +1,7 @@
 import igraph
 import math
 import sys
+import os
 import VIG_to_CNF
 
 def generate_cnf(cnf_dir, n, p, k, m):
@@ -8,7 +9,7 @@ def generate_cnf(cnf_dir, n, p, k, m):
 	while len(g.es) == 0: g = igraph.Graph.Erdos_Renyi(n, p=p)
 	n = g.vcount()
 	cnf = VIG_to_CNF.VIG_to_CNF(g, m, k)
-	VIG_to_CNF.print_cnf(cnf, n, m, "{}/{}_{}_{}_{}.cnf".format(cnf_dir, n, p, m, k))
+	VIG_to_CNF.write_cnf(cnf, n, m, "{}/{}_{}_{}_{}.cnf".format(cnf_dir, n, p, m, k))
 
 def generate_cnfs(cnf_dir, n, p, k, m_min = None, num_cvr = 20, num_cnf = 10, growth_factor = 1.2, scale_factor = 10):
 	"""
@@ -38,6 +39,31 @@ def generate_cnfs(cnf_dir, n, p, k, m_min = None, num_cvr = 20, num_cnf = 10, gr
 		for j in range(0, num_cnf):
 			cnf = generate_cnf(cnf_dir, n, p, k, m)
 
+def get_parameters_from_filename(filename):
+	components = filename.split('_')
+	n = int(components[0])
+	p = float(components[1])
+	m = int(components[2])
+	return n, p, m
+
+def get_results(filename):
+	solving_time = None
+	is_sat = None
+
+	sat_log_file = filename.replace(".cnf", ".log", 1)
+	try:
+		f = open(file, "r")
+		lines = f.read()
+		print(lines)
+		solving_time = 0
+		is_sat = 0
+		f.close()
+	except:
+		solving_time = None
+		is_sat = None
+
+	return solving_time, is_sat
+
 def determine_threshold_cvrs(cnf_dir, n, p):
 	class CNF_result:
 		def update(self, solving_time, is_sat):
@@ -64,16 +90,19 @@ def determine_threshold_cvrs(cnf_dir, n, p):
 
 	# Compute average solving times
 	solving_times = {}
-	for cnf in cnf_dir:
-		n, p, m = get_parameters_from_filename(cnf)
-		key = "{},{}".format(n, p)
-		solving_time, is_sat = get_results(cnf)
-		if not (key in solving_times):
-			solving_times[key] = {}
-		if m in solving_times[key]:
-			solving_times[key][m].update(solving_time, is_sat)
-		else:
-			solving_times[key][m] = CNF_result(solving_time, is_sat)
+	for cnf in os.listdir(cnf_dir):
+		if os.path.isfile(os.path.join(cnf_dir, cnf)):
+			n, p, m = get_parameters_from_filename(cnf)
+			key = "{},{}".format(n, p)
+			solving_time, is_sat = get_results("{}/{}".format(cnf_dir, cnf))
+			if solving_time == None:
+				continue
+			if not (key in solving_times):
+				solving_times[key] = {}
+			if m in solving_times[key]:
+				solving_times[key][m].update(solving_time, is_sat)
+			else:
+				solving_times[key][m] = CNF_result(solving_time, is_sat)
 	
 	print("avg_time, sat_time, unsat_time, num_sat, num_unsat")
 	for key, result_map in solving_times.items():
@@ -104,7 +133,7 @@ def main():
 	if option == "generate_cnfs":
 		# Generate CNFs of interest
 		for i in range(1, int(math.floor(1 / delta_p)) + 1):
-			generate_cnfs(cnf_dir, n, delta_p * i, k)
+			generate_cnfs(cnf_dir, n, delta_p * i, k, num_cvr = 1, num_cnf = 1)
 	elif option == "find_thresholds":
 		# Find threshold CVRs
 		for i in range(1, int(math.floor(1 / delta_p)) + 1):

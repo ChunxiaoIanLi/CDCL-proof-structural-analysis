@@ -93,23 +93,14 @@ def count_unvisited(g):
 	return counter
 
 def print_cnf(cnf, n, m, cnf_file = None):
-	def file_output(f, outstr):
-		if f == None: print(outstr) 
-		else: f.write(outstr)
-
-	f = None
-	if cnf_file != None: f = open(cnf_file, "w")
-
-	file_output(f, "p cnf {0} {1}".format(n, m)) 
+	print("p cnf {0} {1}".format(n, m)) 
 	for c in cnf:
 		outstr = ""
 		for l in c:
 			outstr+=str(l)
 			outstr+=" "
 		outstr+="0"
-		file_output(f, outstr)
-
-	if f != None: f.close()
+		print(outstr)
 
 def write_cnf(cnf, n, m, file):
 	fp = open(file, "w")
