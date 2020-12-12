@@ -92,16 +92,24 @@ def count_unvisited(g):
 			counter+=1
 	return counter
 
-def print_cnf(cnf, n, m):
-	print("p cnf {0} {1}".format(n, m))
+def print_cnf(cnf, n, m, cnf_file = None):
+	def file_output(f, outstr):
+		if f == None: print(outstr) 
+		else: f.write(outstr)
+
+	f = None
+	if cnf_file != None: f = open(cnf_file, "w")
+
+	file_output(f, "p cnf {0} {1}".format(n, m)) 
 	for c in cnf:
 		outstr = ""
 		for l in c:
 			outstr+=str(l)
 			outstr+=" "
 		outstr+="0"
-		print(outstr)
-	return
+		file_output(f, outstr)
+
+	if f != None: f.close()
 
 def write_cnf(cnf, n, m, file):
 	fp = open(file, "w")
@@ -151,6 +159,7 @@ def compute_phase_one_clauses(g, k):
 
 def compute_phase_two_clauses(g, k, m):
 	clauses = []
+	print(len(g.es))
 	for i in range(m):
 		e = random.sample(g.es, 1)[0]
 		clause = []

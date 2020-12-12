@@ -3,10 +3,12 @@ import math
 import sys
 import VIG_to_CNF
 
-def generate_cnf(n, p, k, m):
-	g = igraph.Graph.Erdos_Renyi(n, p)
+def generate_cnf(cnf_dir, n, p, k, m):
+	g = igraph.Graph.Erdos_Renyi(n, p=p)
+	while len(g.es) == 0: g = igraph.Graph.Erdos_Renyi(n, p=p)
 	n = g.vcount()
-	VIG_to_CNF.VIG_to_CNF(g, m, k)
+	cnf = VIG_to_CNF.VIG_to_CNF(g, m, k)
+	VIG_to_CNF.print_cnf(cnf, n, m, "{}/{}_{}_{}_{}.cnf".format(cnf_dir, n, p, m, k))
 
 def generate_cnfs(cnf_dir, n, p, k, m_min = None, num_cvr = 20, num_cnf = 10, growth_factor = 1.2, scale_factor = 10):
 	"""
@@ -29,26 +31,12 @@ def generate_cnfs(cnf_dir, n, p, k, m_min = None, num_cvr = 20, num_cnf = 10, gr
 	m_min = max(m_min, (p * n * (n + 1)) / (2 * k))
 
 	# Grow m exponentially
-	max_solving_time = 0
-	threshold_cvr = n / m_min
 	for i in range(0, num_cvr):
-		m = m_min + scale_factor * growth_factor**i
+		m = int(round(m_min + scale_factor * growth_factor**i))
 
 		# Generate CNFs according to the G(n, p) model with m clauses
-		avg_solving_time = 0
 		for j in range(0, num_cnf):
-			cnf = generate_cnf(cnf_dir, n, p, m)
-
-			# Calculate solving time for the CNF
-			avg_solving_time += sat_solver(cnf)
-
-		# Update threshold CVR
-		avg_solving_time /= num_cnf
-		if avg_solving_time > max_solving_time:
-			max_solving_time = avg_solving_time
-			threshold_cvr = n / m
-	
-	return threshold_CVR
+			cnf = generate_cnf(cnf_dir, n, p, k, m)
 
 def determine_threshold_cvrs(cnf_dir, n, p):
 	class CNF_result:
@@ -78,7 +66,7 @@ def determine_threshold_cvrs(cnf_dir, n, p):
 	solving_times = {}
 	for cnf in cnf_dir:
 		n, p, m = get_parameters_from_filename(cnf)
-		key = f"{n},{p}"
+		key = "{},{}".format(n, p)
 		solving_time, is_sat = get_results(cnf)
 		if not (key in solving_times):
 			solving_times[key] = {}
@@ -87,7 +75,7 @@ def determine_threshold_cvrs(cnf_dir, n, p):
 		else:
 			solving_times[key][m] = CNF_result(solving_time, is_sat)
 	
-	print(f"avg_time, sat_time, unsat_time, num_sat, num_unsat")
+	print("avg_time, sat_time, unsat_time, num_sat, num_unsat")
 	for key, result_map in solving_times.items():
 		max_solving_time = 0
 		threshold_m = 0
@@ -96,16 +84,16 @@ def determine_threshold_cvrs(cnf_dir, n, p):
 			if unsat_time >= max_solving_time:
 				threshold_m = m
 
-			print(f"[{key},{m}]: {avg_time}, {sat_time}, {unsat_time}, {num_sat}, {num_unsat}")
+			print("[{},{}]: {}, {}, {}, {}, {}".format(key, m, avg_time, sat_time, unsat_time, num_sat, num_unsat))
 
 		n, p = key.split(',')
-		print(f"Threshold({p}) = {n / threshold_m}")
+		print("Threshold({}) = {}".format(p, n / threshold_m))
 
 def main():
 	delta_p = 0.1
 
 	if len(sys.argv) != 5:
-		print(f"Usage: {sys.argv[0]} <option> <cnf_dir> <n> <k>")
+		print("Usage: {} <option> <cnf_dir> <n> <k>".format(sys.argv[0]))
 		return
 
 	option = sys.argv[1]
@@ -116,13 +104,13 @@ def main():
 	if option == "generate_cnfs":
 		# Generate CNFs of interest
 		for i in range(1, int(math.floor(1 / delta_p)) + 1):
-			generate_cnfs(cnf_dir, n, delta_p * i, k, num_cvr = 1, num_cnf = 1)
+			generate_cnfs(cnf_dir, n, delta_p * i, k)
 	elif option == "find_thresholds":
 		# Find threshold CVRs
 		for i in range(1, int(math.floor(1 / delta_p)) + 1):
 			determine_threshold_cvrs(cnf_dir, n, delta_p * i)
 	else:
-		print(f"Invalid option '{option}'")
+		print("Invalid option '{}'".format(option))
 
 if __name__ == "__main__":
 	main()
