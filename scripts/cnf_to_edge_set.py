@@ -1,21 +1,22 @@
 def read_file(file):
-	f=open("{0}".format(file),"r")
-	#skip lines until header
-	line = f.readline()
-	line = line.split(" ")
-	while line[0] != 'p' or line[1] != 'cnf':
-		line = f.readline()
-		line = line.split(" ")
-	n = int(line[2])
-	m = int(line[3])
-	#store clauses in a list
-	clauses=[]
-	line = f.readline()
-	while line:
-		if line[0] != 'c':
-			l = line.strip().split(" ")
-			clauses.append(l[0:-1])
-		line = f.readline()
+	f=open("{0}".format(file), "r")
+	header_found = False
+	# store clauses in a list
+	clauses = []
+	m = 0
+	n = 0
+
+	for line in f.readlines():
+		#skip lines until header
+		line = line.strip().split(" ")
+		if line[0] == 'p' and line[1] == 'cnf':
+			n = int(line[2])
+			m = int(line[3])
+			header_found = True
+
+		elif header_found:
+			if line[0] != 'c':
+				clauses.append(line[0:-1])
 	f.close()
 	return clauses, m, n
 
