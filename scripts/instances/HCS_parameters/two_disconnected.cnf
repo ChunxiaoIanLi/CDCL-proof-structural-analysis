@@ -1,0 +1,16 @@
+# cnf whose VIG is two disconnected components, first component is described
+# by the first 6 clauses and the second component is described by the
+# last 6 clauses
+p cnf 18 12
+-1 2 -3 4 0
+2 3 -4 -5 0
+3 -4 -5 6 0
+-4 -5 6 7 0
+-6 -7 -8 9 0
+7 -8 -9 1 0
+10 -11 12 13 0
+-11 -12 13 14 0
+12 13 -14 -15 0
+13 -14 15 -16 0
+-14 -15 16 17 0
+16 -17 -18 -10 0
