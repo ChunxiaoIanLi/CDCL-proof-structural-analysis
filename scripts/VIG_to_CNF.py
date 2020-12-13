@@ -34,8 +34,8 @@ def initialize_graph(g):
 	n = g.vcount()
 	for i in range(n):
 		g.vs[i]['name'] = i
-		for e in g.es:
-			e["visited"] = False
+	for e in g.es:
+		e["visited"] = False
 	return g
 
 def var_to_lit(v):
@@ -153,6 +153,7 @@ def compute_phase_two_clauses(g, k, m):
 	clauses = []
 	for i in range(m):
 		e = random.sample(g.es, 1)[0]
+		#print(g.es)
 		clause = []
 		u = e.source
 		v = e.target
@@ -199,11 +200,14 @@ def VIG_to_CNF(g, m, k):
 	cnf = []
 	# TODO: assignVarsToDegreeDistribution()
 	# Phase 1: generate clauses such that every edge appears in some clauses
+	printed=False
 	while True:
 		phase_one_clauses = compute_phase_one_clauses(g, k)
 		count_binary_ternary(phase_one_clauses)
 		# add an early exist if len(phase_one_clauses) - m << 0, proportion to m
-		print("Phase 1: used {0}/{1} clauses to cover all edges.".format(len(phase_one_clauses), m))
+		if not printed:
+			print("Phase 1: used {0}/{1} clauses to cover all edges.".format(len(phase_one_clauses), m))
+			printed = True
 		if len(phase_one_clauses) <= m:
 			cnf = phase_one_clauses
 			break

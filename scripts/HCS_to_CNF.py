@@ -10,8 +10,9 @@ def g_to_svg(g):
 	visual_style["layout"] = layout
 	visual_style["bbox"] = (1000, 1000)
 	visual_style["margin"] = 10
-	vertex_clustering = g.community_multilevel()
-	igraph.plot(vertex_clustering, "HCS.svg", mark_groups = True, **visual_style)
+	#vertex_clustering = g.community_multilevel()
+	#igraph.plot(vertex_clustering, "HCS.svg", mark_groups = True, **visual_style)
+	igraph.plot(g, "HCS.svg", **visual_style)
 	return
 
 depth = int(sys.argv[1])
@@ -25,6 +26,7 @@ degree_per_level = [degree]*(depth-1)
 m = int(sys.argv[5])
 # k is the width of clauses
 k = int(sys.argv[6])
+outpath=str(sys.argv[7])
 
 print("generating VIG")
 g = HCS_to_VIG.generate_VIG(1, depth, leaf_community_size, inter_vars_fraction, degree_per_level)
@@ -33,4 +35,4 @@ g_to_svg(g)
 print("generating CNF")
 cnf = VIG_to_CNF.VIG_to_CNF(g, m, k)
 #VIG_to_CNF.print_cnf(cnf, g.vcount(), m)
-VIG_to_CNF.write_cnf(cnf, g.vcount(), m, "test/{0}_{1}_{2}_{3}_{4}.cnf".format(depth, leaf_community_size, inter_vars_fraction, degree, m, k))
+VIG_to_CNF.write_cnf(cnf, g.vcount(), m, outpath)
