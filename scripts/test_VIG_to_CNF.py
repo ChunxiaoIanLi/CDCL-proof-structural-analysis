@@ -63,6 +63,6 @@ if __name__ == "__main__":
         iso = isomorphic(dir_name, file, m, k)
 
         if iso:
-            print('Instance ' + file.name + 'is isomorphic')
+            print('Instance ' + file + 'is isomorphic')
         else:
-            print('INSTANCE ' + file.name + 'IS NOT ISOMORPHIC')
+            print('INSTANCE ' + file + 'IS NOT ISOMORPHIC')
