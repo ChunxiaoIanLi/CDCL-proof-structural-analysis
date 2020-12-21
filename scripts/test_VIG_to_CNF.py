@@ -6,33 +6,7 @@ from cnf_to_edge_set import cnf_to_edge_set, read_file
 from os import walk, path
 
 
-if len(sys.argv) != 4:
-    print('ERROR: call with arguments: file/dir name, m, k')
-
-file_or_dir = str(sys.argv[1])
-if not path.isfile(file_or_dir) and not path.isdir(file_or_dir):
-    print('ERROR: arg 1 is not a file or directory')
-
-# m is the number of clauses in the CNF
-m = int(sys.argv[2])
-# k is the width of clauses
-k = int(sys.argv[3])
-
-
-files = []
-dir_name = ''
-if path.isdir(file_or_dir):
-    dir_name = file_or_dir
-    for (dirpath, dirnames, filenames) in walk(file_or_dir):
-        for filename in filenames:
-            if filename.endswith('.cnf'):
-                files.append(filename)
-else:
-    files.append(file_or_dir)
-
-
-# run test for each file in list
-for file in files:
+def isomorphic(dir_name, file, m, k):
     # convert original cnf to vig
     clauses_orig, temp_orig, n = read_file(path.join(dir_name, file))
     edge_set_orig = cnf_to_edge_set(clauses_orig)
@@ -56,7 +30,39 @@ for file in files:
     # check if original cnf and output cnf's graphs are isomorphic
     iso = g_orig.isomorphic(g_out)
 
-    if iso:
-        print('Instance ' + file.name + 'is isomorphic')
+    return iso
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print('ERROR: call with arguments: file/dir name, m, k')
+
+    file_or_dir = str(sys.argv[1])
+    if not path.isfile(file_or_dir) and not path.isdir(file_or_dir):
+        print('ERROR: arg 1 is not a file or directory')
+
+    # m is the number of clauses in the CNF
+    m = int(sys.argv[2])
+    # k is the width of clauses
+    k = int(sys.argv[3])
+
+
+    files = []
+    dir_name = ''
+    if path.isdir(file_or_dir):
+        dir_name = file_or_dir
+        for (dirpath, dirnames, filenames) in walk(file_or_dir):
+            for filename in filenames:
+                if filename.endswith('.cnf'):
+                    files.append(filename)
     else:
-        print('INSTANCE ' + file.name + 'IS NOT ISOMORPHIC')
+        files.append(file_or_dir)
+
+
+    # run test for each file in list
+    for file in files:
+        iso = isomorphic(dir_name, file, m, k)
+
+        if iso:
+            print('Instance ' + file.name + 'is isomorphic')
+        else:
+            print('INSTANCE ' + file.name + 'IS NOT ISOMORPHIC')
