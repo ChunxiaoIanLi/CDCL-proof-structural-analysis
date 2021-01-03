@@ -19,7 +19,7 @@ HCS_to_CNF(depth, leaf_community_size, inter_vars_fraction, degree, m, k, outpat
 
 # Check: size of the HCS is equal to the number of variables in the final CNF
 clauses, m_out, n_out = read_file(outpath)
-if m == m_out and degree ** (depth - 1) == n_out:
+if m == m_out and leaf_community_size * (degree ** (depth - 1)) == n_out:
     print("Check 1: PASS \n The size of the HCS is equal to the number of variables in the final CNF")
 else:
     print("Check 1: FAIL \n The size of the HCS is NOT equal to the number of variables in the final CNF")
