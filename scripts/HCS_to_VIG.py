@@ -6,20 +6,29 @@ import random
 import math
 import copy
 
-# functions to write tests for:
-#	1. get_leaf_adjacency_matrix()
-#   2. combine_adjacency_matrices()
-#   3. add_edges_to_combined_zero_adjacency_matrix()
-#   4. count_inter_vars()
-#   5. compute_modularity()
+def get_leaf_graph(n):
+	edges_to_add = []
+	#g = igraph.Graph.Erdos_Renyi(n, 0.3)
+	g = igraph.Graph(n)
+	g.vs["visited"] = [False] * g.vcount()
+	for v in range(g.vcount()):
+		if g.vs[v]["visited"] == False:
+			(u, w) = random.sample(range(0, g.vcount()), 2)
+			while v == u or v == w:
+				(u, w) = random.sample(range(0, g.vcount()), 2)
+			edges_to_add.append([u, v])
+			edges_to_add.append([u, w])
+			edges_to_add.append([v, w])
+			g.vs[v]["visited"] = True
+			g.vs[u]["visited"] = True
+			g.vs[w]["visited"] = True
+	while len(edges_to_add) < n * 8.8:
+		(u, v, w) = random.sample(range(0, g.vcount()), 3)
+		edges_to_add.append([u, v])
+		edges_to_add.append([u, w])
+		edges_to_add.append([v, w])
+	g.add_edges(edges_to_add)
 
-def get_leaf_adjacency_matrix(n):
-	g = igraph.Graph.Erdos_Renyi(n, 0.3)
-	# adjacency_matrix = []
-	# for i in range(n):
-	# 	row = [1]*n
-	# 	row[i] = 0
-	# 	adjacency_matrix.append(row)
 	return g
 
 def combine_subgraphs(subgraphs):
@@ -54,42 +63,40 @@ def same_community(u, v, community_id_upper_bounds):
 	return False
 
 def pick_inter_triangle(g, u, random_inter_vars, community_id_upper_bounds):
-	while True:
+	v = random.sample(random_inter_vars, 1)[0]
+	while same_community(u, v, community_id_upper_bounds):
 		v = random.sample(random_inter_vars, 1)[0]
-		if not same_community(u, v, community_id_upper_bounds):
-			w = random.sample(random_inter_vars, 1)[0]
-			if same_community(u, w, community_id_upper_bounds):
-				if g.get_eid(u, w, directed=False, error=False) >= 0:
-					return v, w
-			elif same_community(v, w, community_id_upper_bounds):
-				if g.get_eid(v, w, directed=False, error=False) >= 0:
-					return v, w
-			else:
-				return v, w
-
-def all_same_community(inter_vars, community_id_upper_bounds):
-	inter_vars = sorted(set(inter_vars))
-	if same_community(inter_vars[0], inter_vars[-1], community_id_upper_bounds):
-		return True
-	return False
+	w = random.sample(random_inter_vars, 1)[0]
+	while w == v or w == u:
+		w = random.sample(random_inter_vars, 1)[0]
+	return v, w
 
 
-def add_edges_to_combined_disconnected_subgraphs(g, inter_vars_fraction, community_id_upper_bounds):
+def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fraction, community_id_upper_bounds):
 
 	# randomly pick exactly inter-var number of inter-community variables
 	# and add exactly inter-edges number of inter-community edges within the selected variables
 	# 	- range(a, b): b is exclusive
 	# 	- picking inter_vars distinct variables
-	inter_vars = int(g.vcount()*inter_vars_fraction)
+
+	inter_vars_decay = float(level)/depth
+	inter_vars = int(g.vcount()*inter_vars_fraction * inter_vars_decay)
 	#inter_edges = int(inter_vars*math.log(inter_vars)/2)
-	inter_edges = int(inter_vars * 2)
+	inter_edges = int(inter_vars * 3)
 	while True:
 		# phase 1: for each uncovered vertex, connect it to a vertex in another community
 		#print("phase 1 starts")
 		inter_edges_count = 0
-		random_inter_vars = random.sample(range(0, g.vcount()), inter_vars)
-		while all_same_community(random_inter_vars, community_id_upper_bounds):
-			random_inter_vars = random.sample(range(0, g.vcount()), inter_vars)
+		# select inter_vars from each community 
+		random_inter_vars = []
+		start = 0
+		end = community_id_upper_bounds[0]
+		for i in range(len(community_id_upper_bounds)):
+			end = community_id_upper_bounds[i]
+			random_inter_vars += random.sample(range(start, end-1), inter_vars/len(community_id_upper_bounds))
+			start = end
+		#random_inter_vars = random.sample(range(0, g.vcount()), inter_vars)
+
 		uncovered = set(random_inter_vars)
 		# TODO: add an array for edges_to_add and add them all at once
 		edges_to_add=[]
@@ -115,8 +122,8 @@ def add_edges_to_combined_disconnected_subgraphs(g, inter_vars_fraction, communi
 				inter_edges_count+=1
 		g.add_edges(edges_to_add)
 
-		#print("phase 1 done")
-		#print("phase 2 started")
+		# print("phase 1 done")
+		# print("phase 2 started")
 		# phase 2: randomly assign the remaining edges
 		# TODO: instead of randomly picking u and v, we can fix u first and randomly picking a v from a different community
 		if inter_edges >= inter_edges_count:
@@ -173,7 +180,7 @@ def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree)
 	if level == depth:
 		# change get leaf community to return an igraph object
 		#return igraph.Graph.Adjacency(get_leaf_adjacency_matrix(leaf_community_size), mode="UNDIRECTED")
-		return get_leaf_adjacency_matrix(leaf_community_size)
+		return get_leaf_graph(leaf_community_size)
 	current_degree = degree[level-1]
 
 	subgraphs = []
@@ -185,9 +192,9 @@ def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree)
 	#iteration = 1
 	# start searching for valid matrices 
 	#while True:
-	print("level {0}".format(level))
+	# print("level {0}".format(level))
 	# we add current_inter_edge number of 1's in the matrix (excluding the diagonal)
-	updated_combined_graph = add_edges_to_combined_disconnected_subgraphs(combined_disconnected_subgraphs, inter_vars_fraction, community_id_upper_bounds)
+	updated_combined_graph = add_edges_to_combined_disconnected_subgraphs(level, depth, combined_disconnected_subgraphs, inter_vars_fraction, community_id_upper_bounds)
 	#print("done")
 		# 	# check current_modularity
 		# 	# switch off checking for modularity
