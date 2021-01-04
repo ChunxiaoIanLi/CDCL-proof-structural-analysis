@@ -76,7 +76,9 @@ def compute_intercommunity_vars(g, vertex_clustering):
 	var_occurrence = [0]*g.vcount()
 	es = g.es()
 	for i, crossing in enumerate(vertex_clustering.crossing()):
-		if crossing: var_occurrence[es[i].tuple[0]] |= 1
+		if crossing:
+			var_occurrence[es[i].tuple[0]] |= 1
+			var_occurrence[es[i].tuple[1]] |= 1
 	return var_occurrence.count(1)
 
 def update_output_data(
