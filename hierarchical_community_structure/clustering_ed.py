@@ -9,77 +9,14 @@ import math
 from PMILib import PMI
 lib = ctypes.CDLL('/home/ianli/CDCL-proof-structural-analysis/scripts/resolvability/libmergeability.so')
 
-def write_data(file):
-	mergeability_filename = file + ".mergeabilitynorm1.ed"
-	mergeability_f = open(mergeability_filename, "w")
-	for i in mergeabilitynorm1_data:
-		mergeability_f.write(",".join(i))
-		mergeability_f.write("\n")
-	mergeability_f.close()
 
-	mergeability_filename = file + ".mergeabilitynorm2.ed"
-	mergeability_f = open(mergeability_filename, "w")
-	for i in mergeabilitynorm2_data:
-		mergeability_f.write(",".join(i))
-		mergeability_f.write("\n")
-	mergeability_f.close()
-
-
-	modularity_filename = file + ".modularity.ed"
-	modularity_f = open(modularity_filename, "w")
-	for i in modularity_data:
-		modularity_f.write(",".join(i))
-		modularity_f.write("\n")
-	modularity_f.close()
-
-	degree_filename = file + ".degree.ed"
-	degree_f = open(degree_filename, "w")
-	for i in degree_data:
-		degree_f.write(",".join(i))
-		degree_f.write("\n")
-	degree_f.close()
-
-	community_size_filename = file + ".community_size.ed"
-	community_size_f = open(community_size_filename, "w")
-	for i in community_size_data:
-		community_size_f.write(",".join(i))
-		community_size_f.write("\n")
-	community_size_f.close()
-
-	inter_edges_filename = file + ".inter_edges.ed"
-	inter_edges_f = open(inter_edges_filename, "w")
-	for i in inter_edges_data:
-		inter_edges_f.write(",".join(i))
-		inter_edges_f.write("\n")
-	inter_edges_f.close()
-
-	inter_vars_filename = file + ".inter_vars.ed"
-	inter_vars_f = open(inter_vars_filename, "w")
-	for i in inter_vars_data:
-		inter_vars_f.write(",".join(i))
-		inter_vars_f.write("\n")
-	inter_vars_f.close()
-
-	pre_width_filename = file + ".pre_width.ed"
-	pre_width_f = open(pre_width_filename, "w")
-	for i in pre_width_data:
-		pre_width_f.write(",".join(i))
-		pre_width_f.write("\n")
-	pre_width_f.close()
-
-	post_width_filename = file + ".post_width.ed"
-	post_width_f = open(post_width_filename, "w")
-	for i in post_width_data:
-		post_width_f.write(",".join(i))
-		post_width_f.write("\n")
-	post_width_f.close()
-
-	# diameter_filename = file + ".diameter.ed"
-	# diameter_f = open(diameter_filename, "w")
-	# for i in diameter_data:
-	# 	diameter_f.write(",".join(i))
-	# 	diameter_f.write("\n")
-	# diameter_f.close()
+def write_data(outfile, extension, data):
+	outfilename = outfile + extension
+	f = open(outfilename, "w")
+	for i in data:
+		f.write(",".join(i))
+		f.write("\n")
+	f.close()
 	return
 
 def rgba(color, percent, opacity):
@@ -234,7 +171,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 		current_max_node = hierarchical_tree.vcount()-1
 
 		for c in range(len(vertex_clustering)):
-			current_node = current_max_node - c
+			current_node = current_max_node - (len(vertex_clustering) - c - 1)
 			temp_path = path[:]
 			temp_path.append(c)
 			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data, output_directory)
@@ -293,4 +230,12 @@ community_structure_style = set_community_structure_style(g)
 
 compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data, output_directory)
 plot_hierarchical_tree(hierarchical_tree, file)
-write_data(file)
+write_data(file, ".mergeabilitynorm1", mergeabilitynorm1_data)
+write_data(file, ".mergeabilitynorm2", mergeabilitynorm2_data)
+write_data(file, ".degree", degree)
+write_data(file, ".community_size", community_size)
+write_data(file, ".inter_edges", inter_edges)
+write_data(file, ".inter_vars", inter_vars)
+write_data(file, ".pre_width", pre_width)
+write_data(file, ".post_width", post_width)
+
