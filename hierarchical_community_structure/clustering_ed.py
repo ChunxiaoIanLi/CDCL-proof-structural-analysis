@@ -7,7 +7,7 @@ from random import randrange
 import ctypes
 import math
 from PMILib import PMI
-lib = ctypes.CDLL('/home/ianli/CDCL-proof-structural-analysis/scripts/resolvability/libmergeability.so')
+lib = ctypes.CDLL('libmergeability.so')
 
 def write_data(outfile, extension, data):
 	outfilename = outfile + extension
@@ -207,9 +207,9 @@ if __name__ == "__main__":
 	# Output parameters
 	write_data(file, ".mergeabilitynorm1", mergeabilitynorm1_data)
 	write_data(file, ".mergeabilitynorm2", mergeabilitynorm2_data)
-	write_data(file, ".degree"           , degree                )
-	write_data(file, ".community_size"   , community_size        )
-	write_data(file, ".inter_edges"      , inter_edges           )
-	write_data(file, ".inter_vars"       , inter_vars            )
-	write_data(file, ".pre_width"        , pre_width             )
-	write_data(file, ".post_width"       , post_width            )
+	write_data(file, ".degree"           , degree_data           )
+	write_data(file, ".community_size"   , community_size_data   )
+	write_data(file, ".inter_edges"      , inter_edges_data      )
+	write_data(file, ".inter_vars"       , inter_vars_data       )
+	write_data(file, ".pre_width"        , pre_width_data        )
+	write_data(file, ".post_width"       , post_width_data       )
