@@ -33,8 +33,6 @@ public:
 		// The sum of ((numMergeable) / (width(resolvingClause1) + width(resolvingClause2) - numMergeable - 2)) over all
 		// mergeable literal pairs
 		double mergeabilityScore2 = 0;
-		// A vector for counting the number of occurences of a given number of mergeable literal pairs
-		std::vector<long long> mergeabilityVector{};
 		// A vector for counting the number of occurences of a given mergeability score 
 		std::vector<long long> mergeabilityScoreVector{};
 	};

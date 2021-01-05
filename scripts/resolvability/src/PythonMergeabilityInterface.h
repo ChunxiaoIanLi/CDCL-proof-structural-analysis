@@ -31,12 +31,22 @@ public:
 	/**
 	 * @brief Get the mergeability score normalized by resolvability
 	 */
-	double getMergeabilityScoreNorm1();
+	double getMergeabilityScore1Norm1();
 
 	/**
 	 * @brief Get the mergeability score normalized by m^2
 	 */
-	double getMergeabilityScoreNorm2();
+	double getMergeabilityScore1Norm2();
+
+	/**
+	 * @brief Get the mergeability score normalized by resolvability
+	 */
+	double getMergeabilityScore2Norm1();
+
+	/**
+	 * @brief Get the mergeability score normalized by m^2
+	 */
+	double getMergeabilityScore2Norm2();
 
 	/**
 	 * @brief Get the average clause width before resolution

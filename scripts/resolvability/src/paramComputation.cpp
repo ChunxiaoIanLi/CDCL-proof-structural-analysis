@@ -145,7 +145,6 @@ void ParamComputation::computeResolvable(
 		const std::vector<long long>& negClause
 	) {
 		++(resolvabilityMergeabilityOutput->totalNumResolvable);
-		++(resolvabilityMergeabilityOutput->mergeabilityVector[tmpNumMergeable]);
 		resolvabilityMergeabilityOutput->totalNumMergeable += tmpNumMergeable;
 
 		// Calculate normalized mergeability score
@@ -155,11 +154,6 @@ void ParamComputation::computeResolvable(
 			const double tmpMergeabilityScore2 = tmpNumMergeable / static_cast<double>(totalClauseSize - tmpNumMergeable - 2);
 			resolvabilityMergeabilityOutput->mergeabilityScore1 += tmpMergeabilityScore;
 			resolvabilityMergeabilityOutput->mergeabilityScore2 += tmpMergeabilityScore2;
-
-			// Add to histogram
-			// index = [ (local mergeability score) / (max mergeability score) ] * (num buckets)
-			const int scoreVectorIndex = static_cast<int>(std::floor(MAX_MERGEABILITY_SCORE_INV * MSV_NUM_BUCKETS * tmpMergeabilityScore));
-			++(resolvabilityMergeabilityOutput->mergeabilityScoreVector[scoreVectorIndex]);
 		}
 
 		// Add to total post-resolution clause size

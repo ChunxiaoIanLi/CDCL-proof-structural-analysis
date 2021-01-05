@@ -24,7 +24,6 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 	// Reset output values
 	ParamComputation::resetOutput(m_output);
 	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
-	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
 	m_numClauses = 0;
 	m_output.preResolutionClauseWidth = 0;
 
@@ -66,13 +65,22 @@ long PythonMergeabilityInterface::getMergeability() {
 	return m_output.totalNumMergeable;
 }
 
-double PythonMergeabilityInterface::getMergeabilityScoreNorm1() {
+double PythonMergeabilityInterface::getMergeabilityScore1Norm1() {
 	return m_output.mergeabilityScore1 / static_cast<double>(m_output.totalNumResolvable);
 }
 
-double PythonMergeabilityInterface::getMergeabilityScoreNorm2() {
+double PythonMergeabilityInterface::getMergeabilityScore1Norm2() {
 	const double m = static_cast<double>(m_numClauses);
 	return m_output.mergeabilityScore1 / (m * m);
+}
+
+double PythonMergeabilityInterface::getMergeabilityScore2Norm1() {
+	return m_output.mergeabilityScore2 / static_cast<double>(m_output.totalNumResolvable);
+}
+
+double PythonMergeabilityInterface::getMergeabilityScore2Norm2() {
+	const double m = static_cast<double>(m_numClauses);
+	return m_output.mergeabilityScore2 / (m * m);
 }
 
 double PythonMergeabilityInterface::getPreResolutionClauseWidth() {

@@ -30,13 +30,23 @@ extern "C" {
 	}
 
 	// Get mergeability score normalized by the total number of resolvable clauses
-	double PMI_getMergeabilityScoreNorm1(PythonMergeabilityInterface* interface) {
-		return interface->getMergeabilityScoreNorm1();
+	double PMI_getMergeabilityScore1Norm1(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScore1Norm1();
 	}
 
 	// Get mergeability score normalized by m^2
-	double PMI_getMergeabilityScoreNorm2(PythonMergeabilityInterface* interface) {
-		return interface->getMergeabilityScoreNorm2();
+	double PMI_getMergeabilityScore1Norm2(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScore1Norm2();
+	}
+
+	// Get mergeability score normalized by the total number of resolvable clauses
+	double PMI_getMergeabilityScore2Norm1(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScore2Norm1();
+	}
+
+	// Get mergeability score normalized by m^2
+	double PMI_getMergeabilityScore2Norm2(PythonMergeabilityInterface* interface) {
+		return interface->getMergeabilityScore2Norm2();
 	}
 
 	// Get the average clause width before resolution

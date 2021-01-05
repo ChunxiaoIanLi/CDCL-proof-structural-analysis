@@ -76,7 +76,8 @@ int main (const int argc, const char* const * argv) {
 	for (const std::string& inputFileStr : inputFiles) {
 		// Read clauses from file
 		static const std::string CNF_EXTENSION = ".cnf";
-		const std::string inputFileBaseStr = inputFileStr.substr(0, inputFileStr.size() - CNF_EXTENSION.size());
+		// const std::string inputFileBaseStr = inputFileStr.substr(0, inputFileStr.size() - CNF_EXTENSION.size());
+		const std::string inputFileBaseStr = inputFileStr;
 		long long numVars = 0, numClauses = 0, maxClauseWidth = 0;
 		std::vector<std::vector<long long>> clauses;
 		if (ParamIO::readClauses(clauses, numVars, numClauses, maxClauseWidth, inputFileStr)) return 1;
@@ -102,7 +103,6 @@ int main (const int argc, const char* const * argv) {
 		// Calculate and output num resolvable and num mergeable
 		if (options.find(OPTION_RESOLVABILITY) != options.end()) {
 			ParamComputation::ResolvabilityMergeabilityOutput resolvabilityMergeabilityOutput{};
-			resolvabilityMergeabilityOutput.mergeabilityVector = std::vector<long long>(maxClauseWidth + 1);
 			resolvabilityMergeabilityOutput.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
 			ParamComputation::computeResolvable(&resolvabilityMergeabilityOutput, clauses, numVars);
 			assert(resolvabilityMergeabilityOutput.totalNumResolvable >= 0);
@@ -117,9 +117,6 @@ int main (const int argc, const char* const * argv) {
 				resolvabilityMergeabilityOutput.totalNumMergeable,
 				resolvabilityMergeabilityOutput.mergeabilityScore1,
 				resolvabilityMergeabilityOutput.mergeabilityScore2
-			));
-			ParamIO::writeFile(inputFileBaseStr + ".mv", std::bind(ParamIO::writeMergeabilityVector, _1,
-				resolvabilityMergeabilityOutput.mergeabilityVector
 			));
 			ParamIO::writeFile(inputFileBaseStr + ".msv", std::bind(ParamIO::writeMergeabilityScoreVector, _1,
 				resolvabilityMergeabilityOutput.mergeabilityScoreVector

@@ -98,19 +98,6 @@ void ParamIO::writeDegreeVector(std::ofstream& outFile, std::vector<long long>& 
 	}
 }
 
-void ParamIO::writeMergeabilityVector(std::ofstream& outFile, std::vector<long long>& mergeabilityVector) {
-	// Determine when to stop outputting the mergeability vector
-	unsigned int indexOfGreatestNonZero = 0;
-	for (unsigned int i = 0; i < mergeabilityVector.size(); ++i) {
-		if (mergeabilityVector[i] != 0) indexOfGreatestNonZero = i;
-	}
-
-	// Output mergeability vector (output an additional zero at the end)
-	for (unsigned int i = 0; i <= indexOfGreatestNonZero + 1; ++i) {
-		outFile << i << " " << mergeabilityVector[i] << std::endl;
-	}
-}
-
 void ParamIO::writeMergeabilityScoreVector(std::ofstream& outFile, std::vector<long long>& mergeabilityScoreVector) {
 	for (int i = 0; i <= MSV_NUM_BUCKETS; ++i) {
 		outFile << (i * MAX_MERGEABILITY_SCORE) / static_cast<double>(MSV_NUM_BUCKETS) << " " << mergeabilityScoreVector[i] << std::endl;
