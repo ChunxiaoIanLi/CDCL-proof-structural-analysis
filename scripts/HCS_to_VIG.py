@@ -23,6 +23,7 @@ def get_leaf_graph(n):
 			g.vs[u]["visited"] = True
 			g.vs[w]["visited"] = True
 	while len(edges_to_add) < n * 8.8:
+		# enforce remaining edges to be in triangles too
 		(u, v, w) = random.sample(range(0, g.vcount()), 3)
 		edges_to_add.append([u, v])
 		edges_to_add.append([u, w])
@@ -79,7 +80,8 @@ def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fra
 	# 	- range(a, b): b is exclusive
 	# 	- picking inter_vars distinct variables
 
-	inter_vars_decay = float(level)/depth
+	#inter_vars_decay = float(level)/depth
+	inter_vars_decay = 1
 	inter_vars = int(g.vcount()*inter_vars_fraction * inter_vars_decay)
 	#inter_edges = int(inter_vars*math.log(inter_vars)/2)
 	inter_edges = int(inter_vars * 3)
