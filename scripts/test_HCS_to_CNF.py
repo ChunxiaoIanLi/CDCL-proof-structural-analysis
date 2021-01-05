@@ -46,8 +46,14 @@ g.write_svg(outpath[:-4] + '.svg', vertex_size=4, font_size=0)
 # - we know how many communities & intercommunity vars
 total_comm = degree ** (depth - 1)
 expected_in_comm = (8.8 * leaf_community_size) * total_comm
-expected_between_comm = (inter_vars_fraction * leaf_community_size) * 3
-total_expected = int(expected_in_comm + expected_between_comm)
+level_size = total_comm
+total_inter_edges = 0
+while level_size != 1:
+    total_inter_edges += (3 * inter_vars_fraction * leaf_community_size) * (level_size/degree)
+    level_size = level_size/degree
+
+total_expected = int(expected_in_comm + total_inter_edges)
+
 if len(g.vs()) == total_expected:
     print("Check 3: PASS \n The total number of edges is what is expected")
 else:
