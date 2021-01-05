@@ -103,7 +103,6 @@ int main (const int argc, const char* const * argv) {
 		// Calculate and output num resolvable and num mergeable
 		if (options.find(OPTION_RESOLVABILITY) != options.end()) {
 			ParamComputation::ResolvabilityMergeabilityOutput resolvabilityMergeabilityOutput{};
-			resolvabilityMergeabilityOutput.mergeabilityVector = std::vector<long long>(maxClauseWidth + 1);
 			resolvabilityMergeabilityOutput.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
 			ParamComputation::computeResolvable(&resolvabilityMergeabilityOutput, clauses, numVars);
 			assert(resolvabilityMergeabilityOutput.totalNumResolvable >= 0);
@@ -118,9 +117,6 @@ int main (const int argc, const char* const * argv) {
 				resolvabilityMergeabilityOutput.totalNumMergeable,
 				resolvabilityMergeabilityOutput.mergeabilityScore1,
 				resolvabilityMergeabilityOutput.mergeabilityScore2
-			));
-			ParamIO::writeFile(inputFileBaseStr + ".mv", std::bind(ParamIO::writeMergeabilityVector, _1,
-				resolvabilityMergeabilityOutput.mergeabilityVector
 			));
 			ParamIO::writeFile(inputFileBaseStr + ".msv", std::bind(ParamIO::writeMergeabilityScoreVector, _1,
 				resolvabilityMergeabilityOutput.mergeabilityScoreVector

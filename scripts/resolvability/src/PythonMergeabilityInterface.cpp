@@ -24,7 +24,6 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 	// Reset output values
 	ParamComputation::resetOutput(m_output);
 	m_output.mergeabilityScoreVector = std::vector<long long>(MSV_NUM_BUCKETS + 1);
-	m_output.mergeabilityVector = std::vector<long long>(m_numVariables);
 	m_numClauses = 0;
 	m_output.preResolutionClauseWidth = 0;
 
