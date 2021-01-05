@@ -1,6 +1,5 @@
 import sys
 import igraph
-import math
 from HCS_to_CNF import HCS_to_CNF
 from cnf_to_edge_set import read_file, cnf_to_edge_set
 from test_VIG_to_CNF import isomorphic
@@ -39,7 +38,7 @@ g = igraph.Graph()
 g.add_vertices(n)
 g.add_edges(edge_list)
 
-g.write_svg(outpath[:-4] + '.svg')
+g.write_svg(outpath[:-4] + '.svg', vertex_size=4, font_size=0)
 
 # Check: total edges is equal to what is expected
 # - 8.8 * n = edges in leaf community
