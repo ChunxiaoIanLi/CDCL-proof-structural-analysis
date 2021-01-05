@@ -62,13 +62,6 @@ public:
 	static void writeDegreeVector(std::ofstream& outFile, std::vector<long long>& degreeVector);
 
 	/**
-	 * @brief Write the mergeability vector to file, with the index and degree space-separated on each line
-	 * @param outFile The file stream to write to
-	 * @param mergeabilityVector The mergeability vector to write
-	 */
-	static void writeMergeabilityVector(std::ofstream& outFile, std::vector<long long>& mergeabilityVector);
-
-	/**
 	 * @brief Write the mergeability score vector to file, with the index and degree space-separated on each line. This
 	 * uses the first definition of the normalized mergeability score (maximum score of 0.5)
 	 * @param outFile The file stream to write to

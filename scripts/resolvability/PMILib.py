@@ -11,8 +11,10 @@ class PMI(object):
 		lib.PMI_calculateMergeability.restype = None
 		lib.PMI_calculate.restype = None
 		lib.PMI_getMergeability.restype = ctypes.c_int
-		lib.PMI_getMergeabilityScoreNorm1.restype = ctypes.c_double
-		lib.PMI_getMergeabilityScoreNorm2.restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore1Norm1.restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore1Norm2.restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore2Norm1.restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore2Norm2.restype = ctypes.c_double
 		lib.PMI_getPreResolutionClauseWidth.restype = ctypes.c_double
 		lib.PMI_getPostResolutionClauseWidth.restype = ctypes.c_double
 
@@ -42,15 +44,25 @@ class PMI(object):
 		lib.PMI_getMergeability.argtypes = [ ctypes.c_void_p ]
 		return lib.PMI_getMergeability(self.obj)
 
-	def getMergeabilityScoreNorm1(self):
+	def getMergeabilityScore1Norm1(self):
 		""" Get the mergeability score normalized by resolvability """
-		lib.PMI_getMergeabilityScoreNorm1.argtypes = [ ctypes.c_void_p ]
-		return lib.PMI_getMergeabilityScoreNorm1(self.obj)
+		lib.PMI_getMergeabilityScore1Norm1.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScore1Norm1(self.obj)
 
-	def getMergeabilityScoreNorm2(self):
+	def getMergeabilityScore1Norm2(self):
 		""" Get the mergeability score normalized by m^2 """
-		lib.PMI_getMergeabilityScoreNorm2.argtypes = [ ctypes.c_void_p ]
-		return lib.PMI_getMergeabilityScoreNorm2(self.obj)
+		lib.PMI_getMergeabilityScore1Norm2.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScore1Norm2(self.obj)
+
+	def getMergeabilityScore2Norm1(self):
+		""" Get the mergeability score normalized by resolvability """
+		lib.PMI_getMergeabilityScore2Norm1.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScore2Norm1(self.obj)
+
+	def getMergeabilityScore2Norm2(self):
+		""" Get the mergeability score normalized by m^2 """
+		lib.PMI_getMergeabilityScore2Norm2.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getMergeabilityScore2Norm2(self.obj)
 
 	def getPreResolutionClauseWidth(self):
 		""" Get the average clause width before resolution """
