@@ -29,6 +29,11 @@ public:
 	long getMergeability();
 
 	/**
+	 * @brief Get the total number of resolvable clause pairs
+	 */
+	long getResolvability();
+
+	/**
 	 * @brief Get the mergeability score normalized by resolvability
 	 */
 	double getMergeabilityScore1Norm1();

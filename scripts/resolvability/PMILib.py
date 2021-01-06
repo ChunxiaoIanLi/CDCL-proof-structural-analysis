@@ -44,6 +44,11 @@ class PMI(object):
 		lib.PMI_getMergeability.argtypes = [ ctypes.c_void_p ]
 		return lib.PMI_getMergeability(self.obj)
 
+	def getResolvability(self):
+		""" Get the total number of overlapping literals in resolvable clause pairs """
+		lib.PMI_getResolvability.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getResolvability(self.obj)
+
 	def getMergeabilityScore1Norm1(self):
 		""" Get the mergeability score normalized by resolvability """
 		lib.PMI_getMergeabilityScore1Norm1.argtypes = [ ctypes.c_void_p ]
