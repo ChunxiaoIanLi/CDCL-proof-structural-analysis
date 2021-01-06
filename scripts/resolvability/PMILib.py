@@ -11,6 +11,7 @@ class PMI(object):
 		lib.PMI_calculateMergeability.restype = None
 		lib.PMI_calculate.restype = None
 		lib.PMI_getMergeability.restype = ctypes.c_int
+		lib.PMI_getResolvability.restype = ctypes.c_int
 		lib.PMI_getMergeabilityScore1Norm1.restype = ctypes.c_double
 		lib.PMI_getMergeabilityScore1Norm2.restype = ctypes.c_double
 		lib.PMI_getMergeabilityScore2Norm1.restype = ctypes.c_double
