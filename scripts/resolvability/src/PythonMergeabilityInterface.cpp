@@ -65,6 +65,10 @@ long PythonMergeabilityInterface::getMergeability() {
 	return m_output.totalNumMergeable;
 }
 
+long PythonMergeabilityInterface::getResolvability() {
+	return m_output.totalNumResolvable;
+}
+
 double PythonMergeabilityInterface::getMergeabilityScore1Norm1() {
 	return m_output.mergeabilityScore1 / static_cast<double>(m_output.totalNumResolvable);
 }

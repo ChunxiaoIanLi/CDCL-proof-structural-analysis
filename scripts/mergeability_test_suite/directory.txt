@@ -1,0 +1,23 @@
+1. m=0, r=0
+2. m=0, r=3, no overlap
+3. m=0, r=3, overlap
+4. m=0, r=10, no overlap
+5. m=0, r=10, overlap
+6. m=0, r=19, overlap
+7. m=5, r=5, no overlap
+8. m=5, r=5, overlap
+9. m=10, r=10, no overlap
+10. m=10, r=10, overlap
+11. m=5, r=10, no overlap
+12. m=5, r=10, overlap
+13. m=5, r=19, overlap
+14. m=19, r=19, overlap
+15. m=0, r=10, overlap, resolves on multiple literals
+16. m=5, r=10, overlap, resolves on multiple literals
+17. m=5, r=10, no overlap, resolves on multiple literals
+18. m=5, r=10, overlap, has other mergey pairs
+19. m=0, r=10, overlap, has other mergey pairs
+20. m=5, r=10, no overlap, resolves and mergy on multiple literals
+21. m=5, r=10, no overlap, variable clause length
+22. m=5, r=10, overlap, vairable clause length
+23. m=19, r=19, overlap, vairable clause length

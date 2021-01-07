@@ -29,6 +29,11 @@ extern "C" {
 		return interface->getMergeability();
 	}
 
+	// Get the total number of resolvable clause pairs
+	long PMI_getResolvability(PythonMergeabilityInterface* interface) {
+		return interface->getResolvability();
+	}
+
 	// Get mergeability score normalized by the total number of resolvable clauses
 	double PMI_getMergeabilityScore1Norm1(PythonMergeabilityInterface* interface) {
 		return interface->getMergeabilityScore1Norm1();
