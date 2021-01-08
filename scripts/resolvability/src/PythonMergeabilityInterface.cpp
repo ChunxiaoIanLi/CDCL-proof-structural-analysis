@@ -50,6 +50,7 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 		} break;
 	}
 
+
 	// Save the pre-resolution clause width because this gets overwritten by computeResolvable
 	const long long preResolutionClauseWidth = m_output.preResolutionClauseWidth;
 	m_output.preResolutionClauseWidth = 0;
@@ -59,6 +60,10 @@ void PythonMergeabilityInterface::calculateMergeabilityScore(long long* pyVarSet
 
 	// Load back the correct value of pre-resolution clause width
 	m_output.preResolutionClauseWidth = preResolutionClauseWidth;
+}
+
+double PythonMergeabilityInterface::getCVR() {
+	return m_output.cvr;
 }
 
 long PythonMergeabilityInterface::getMergeability() {
@@ -143,6 +148,10 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 	std::vector<std::vector<unsigned int>>& posClauseIndices, std::vector<std::vector<unsigned int>>& negClauseIndices,
 	const std::set<long long>& varSet
 ) {
+	// Initialize data structures for computing CVR over the clause subset
+	m_numClauses = 0;
+	std::set<long long> vars;
+
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
 		// Find clauses which contain variables outside of the variable set
 		bool clauseContainsOtherVars = false;
@@ -160,19 +169,27 @@ void PythonMergeabilityInterface::_getLookupTablesForVarSet (
 			for (unsigned int j = 0; j < m_clauses[i].size(); ++j) {
 				const int var = m_clauses[i][j];
 				if (var > 0) { // The variable should never be zero
-					posClauseIndices[+var - 1].emplace_back(i);	
+					posClauseIndices[+var - 1].emplace_back(i);
+					vars.insert(var);
 				} else {
 					negClauseIndices[-var - 1].emplace_back(i);
+					vars.insert(-var);
 				}
 			}
 		}
 	}
+
+	// Calculate CVR over the clause subset
+	m_output.cvr = m_numClauses / static_cast<double>(vars.size());
 }
 
 void PythonMergeabilityInterface::_copyClausesForVarSet(
 	std::vector<std::vector<long long>>& clausesCopy,
 	const std::set<long long>& varSet
 ) {
+	// Initialize data structures for computing CVR over the clause subset
+	std::set<long long> vars;
+
 	for (unsigned int i = 0; i < m_clauses.size(); ++i) {
 		// Copy the subset of the clause which appears in the variable set
 		std::vector<long long> clauseCopy;
@@ -186,8 +203,11 @@ void PythonMergeabilityInterface::_copyClausesForVarSet(
 		if (clauseCopy.size() > 0) {
 			clausesCopy.emplace_back(clauseCopy);
 			m_output.preResolutionClauseWidth += clauseCopy.size();
+
+			for (long long literal : clauseCopy) vars.insert(std::abs(literal));
 		}
 	}
 
 	m_numClauses = clausesCopy.size();
+	m_output.cvr = m_numClauses / static_cast<double>(vars.size());
 }

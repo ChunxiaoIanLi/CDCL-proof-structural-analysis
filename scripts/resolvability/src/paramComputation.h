@@ -33,6 +33,8 @@ public:
 		// The sum of ((numMergeable) / (width(resolvingClause1) + width(resolvingClause2) - numMergeable - 2)) over all
 		// mergeable literal pairs
 		double mergeabilityScore2 = 0;
+		// The clause-variable ratio, computed as num_clauses / num_variables
+		double cvr = 0;
 		// A vector for counting the number of occurences of a given mergeability score 
 		std::vector<long long> mergeabilityScoreVector{};
 	};

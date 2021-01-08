@@ -7,16 +7,17 @@ class PMI(object):
 		self.obj = lib.PMI_init()
 
 		# Configure ctypes to work with library functions
-		lib.PMI_setClauses.restype = None
-		lib.PMI_calculateMergeability.restype = None
-		lib.PMI_calculate.restype = None
-		lib.PMI_getMergeability.restype = ctypes.c_int
-		lib.PMI_getResolvability.restype = ctypes.c_int
-		lib.PMI_getMergeabilityScore1Norm1.restype = ctypes.c_double
-		lib.PMI_getMergeabilityScore1Norm2.restype = ctypes.c_double
-		lib.PMI_getMergeabilityScore2Norm1.restype = ctypes.c_double
-		lib.PMI_getMergeabilityScore2Norm2.restype = ctypes.c_double
-		lib.PMI_getPreResolutionClauseWidth.restype = ctypes.c_double
+		lib.PMI_setClauses                  .restype = None
+		lib.PMI_calculateMergeability       .restype = None
+		lib.PMI_calculate                   .restype = None
+		lib.PMI_getCVR                      .restype = ctypes.c_double
+		lib.PMI_getMergeability             .restype = ctypes.c_int
+		lib.PMI_getResolvability            .restype = ctypes.c_int
+		lib.PMI_getMergeabilityScore1Norm1  .restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore1Norm2  .restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore2Norm1  .restype = ctypes.c_double
+		lib.PMI_getMergeabilityScore2Norm2  .restype = ctypes.c_double
+		lib.PMI_getPreResolutionClauseWidth .restype = ctypes.c_double
 		lib.PMI_getPostResolutionClauseWidth.restype = ctypes.c_double
 
 	def setClauses(self, clauses):
@@ -39,6 +40,11 @@ class PMI(object):
 	def calculateMergeability(self, varSet):
 		# This function is deprecated! Use calculate() instead
 		self.calculateMergeability(varSet)
+
+	def getCVR(self):
+		""" Get the clause-variable ratio of the clause subset """
+		lib.PMI_getCVR.argtypes = [ ctypes.c_void_p ]
+		return lib.PMI_getCVR(self.obj)
 
 	def getMergeability(self):
 		""" Get the total number of overlapping literals in resolvable clause pairs """

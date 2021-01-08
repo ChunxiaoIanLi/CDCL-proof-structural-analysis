@@ -24,6 +24,11 @@ public:
 	void calculateMergeabilityScore(long long* varSet, int clauseFilterMode);
 
 	/**
+	 * @brief Get the clause-variable ratio
+	 */
+	double getCVR();
+
+	/**
 	 * @brief Get the total number of overlapping literals in resolvable clause pairs
 	 */
 	long getMergeability();

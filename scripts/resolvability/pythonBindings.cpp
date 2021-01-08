@@ -24,6 +24,11 @@ extern "C" {
 		PMI_calculate(interface, varSet, 0);
 	}
 
+	// Get the clause-variable ratio
+	double PMI_getCVR(PythonMergeabilityInterface* interface) {
+		return interface->getCVR();
+	}
+
 	// Get the total number of overlapping literals in resolvable clause pairs
 	long PMI_getMergeability(PythonMergeabilityInterface* interface) {
 		return interface->getMergeability();

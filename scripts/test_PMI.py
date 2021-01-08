@@ -1,54 +1,180 @@
 from PMILib import PMI
 from cnf_to_edge_set import read_file, cnf_to_clauses_list
+import math
 
-def param_expect(index, expectedMergeability, expectedResolvability):
-	# Create object
-	pmi = PMI()
+class TestResult:
+	def __init__(self, testResults = 0, totalNumTests = 0):
+		self.testResults   = testResults
+		self.totalNumTests = totalNumTests
+	
+	def __iadd__(self, other):
+		self.testResults   += other.testResults
+		self.totalNumTests += other.totalNumTests
+		return self
+	
+	def result_str(self):
+		return "{}/{} tests passed".format(self.totalNumTests - self.testResults, self.totalNumTests)
 
-	# Load clauses from file
-	clauses, m, n = read_file("mergeability_test_suite/{}.cnf".format(index))
+TEST_OKAY = TestResult(0, 1)
+TEST_FAIL = TestResult(1, 1)
+
+# Create object
+pmi = PMI()
+
+def test_merge_res_expect(testResult, clauses, varset, expectedMergeability, expectedResolvability, mode = 0):
+	# Load clauses
 	clause_list = cnf_to_clauses_list(clauses)
 	pmi.setClauses(clause_list)
-
-	# Get variable set
-	varset = range(1, n + 1)
 	varset.append(0)
 
 	# Calculate stats
-	pmi.calculate(varset, 0)
+	pmi.calculate(varset, mode)
 	resolvability = pmi.getResolvability()
 	mergeability = pmi.getMergeability()
 	if (expectedMergeability != mergeability) or (expectedResolvability != resolvability):
-		print("Test {} failed: actual <m,r> = <{},{}>; expected <m,r> = <{},{}>".format(index, mergeability, resolvability, expectedMergeability, expectedResolvability))
-		return 1
-	return 0
+		testResult += TEST_FAIL
+		print("Test {} failed: actual <m,r> = <{},{}>; expected <m,r> = <{},{}>".format(testResult.totalNumTests, mergeability, resolvability, expectedMergeability, expectedResolvability))
+	else: testResult += TEST_OKAY
+
+def test_basic_merge_res():
+	def test_basic_merge_res_expect(testResult, index, expectedMergeability, expectedResolvability):
+		# Load clauses from file
+		clauses, m, n = read_file("mergeability_test_suite/{}.cnf".format(index))
+		varset = range(1, n + 1)
+		return test_merge_res_expect(testResult, clauses, varset, expectedMergeability, expectedResolvability)
+
+	testResult = TestResult(0, 0)
+
+	# Check basic test cases
+	test_merge_res_expect(testResult, [                  ], [    ], 0, 0, 0)
+	test_merge_res_expect(testResult, [[+1    ], [+1    ]], [1   ], 0, 0, 0)
+	test_merge_res_expect(testResult, [[+1    ], [-1    ]], [1   ], 0, 1, 0)
+	test_merge_res_expect(testResult, [[+1, +2], [+1, +2]], [1, 2], 0, 0, 0)
+	test_merge_res_expect(testResult, [[+1, +2], [+1, -2]], [1, 2], 1, 1, 0)
+	test_merge_res_expect(testResult, [[+1, +2], [-1, +2]], [1, 2], 1, 1, 0)
+	test_merge_res_expect(testResult, [[+1, +2], [-1, -2]], [1, 2], 0, 0, 0)
+
+	# Check testcases from file
+	test_basic_merge_res_expect(testResult,  1,  0,  0)
+	test_basic_merge_res_expect(testResult,  2,  0,  3)
+	test_basic_merge_res_expect(testResult,  3,  0,  2)
+	test_basic_merge_res_expect(testResult,  4,  0, 10)
+	test_basic_merge_res_expect(testResult,  5,  0, 10)
+	test_basic_merge_res_expect(testResult,  6,  0, 19)
+	test_basic_merge_res_expect(testResult,  7,  5,  5)
+	test_basic_merge_res_expect(testResult,  8,  5,  5)
+	test_basic_merge_res_expect(testResult,  9, 10, 10)
+	test_basic_merge_res_expect(testResult, 10, 10, 10)
+	test_basic_merge_res_expect(testResult, 11,  5, 10)
+	test_basic_merge_res_expect(testResult, 12,  5, 10)
+	test_basic_merge_res_expect(testResult, 13,  5, 19)
+	test_basic_merge_res_expect(testResult, 14, 19, 19)
+	test_basic_merge_res_expect(testResult, 15,  0,  9)
+	test_basic_merge_res_expect(testResult, 16,  4,  9)
+	test_basic_merge_res_expect(testResult, 17,  2,  9)
+	test_basic_merge_res_expect(testResult, 18,  5, 10)
+	test_basic_merge_res_expect(testResult, 19,  0, 10)
+	test_basic_merge_res_expect(testResult, 20,  5,  5)
+	test_basic_merge_res_expect(testResult, 21,  4, 11)
+	test_basic_merge_res_expect(testResult, 22,  5, 10)
+	test_basic_merge_res_expect(testResult, 23, 19, 19)
+
+	return testResult.result_str()
+
+def test_var_set():
+	testResult = TestResult(0, 0)
+
+	# Test clause inclusion/exclusion
+	clauses = [[1, 2, 3], [-1, 2, 3]]
+	test_merge_res_expect(testResult, clauses, [       ], 0, 0, 0)
+	test_merge_res_expect(testResult, clauses, [       ], 0, 0, 1)
+	test_merge_res_expect(testResult, clauses, [1      ], 0, 0, 0)
+	test_merge_res_expect(testResult, clauses, [1      ], 0, 1, 1)
+	test_merge_res_expect(testResult, clauses, [1, 2   ], 0, 0, 0)
+	test_merge_res_expect(testResult, clauses, [1, 2   ], 1, 1, 1)
+	test_merge_res_expect(testResult, clauses, [2, 3   ], 0, 0, 0)
+	test_merge_res_expect(testResult, clauses, [2, 3   ], 0, 0, 1)
+	test_merge_res_expect(testResult, clauses, [1, 2, 3], 2, 1, 0)
+	test_merge_res_expect(testResult, clauses, [1, 2, 3], 2, 1, 1)
+	clauses = [[1, 2, 3], [-1, 2, 3], [2, -3, 4]]
+	test_merge_res_expect(testResult, clauses, [1, 2, 3], 2, 1, 0)
+	test_merge_res_expect(testResult, clauses, [1, 2, 3], 4, 3, 1)
+	test_merge_res_expect(testResult, clauses, [   2, 3], 0, 0, 0)
+	test_merge_res_expect(testResult, clauses, [   2, 3], 2, 2, 1)
+
+	return testResult.result_str()
+
+def test_width():
+	def test_width_expect(testResult, clauses, varset, expectedPreWidth, expectedPostWidth, mode = 0):
+		# Load clauses
+		clause_list = cnf_to_clauses_list(clauses)
+		pmi.setClauses(clause_list)
+		varset.append(0)
+
+		# Calculate stats
+		pmi.calculate(varset, mode)
+		preWidth  = pmi.getPreResolutionClauseWidth()
+		postWidth = pmi.getPostResolutionClauseWidth()
+		if (expectedPreWidth != preWidth) or (expectedPostWidth != postWidth):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <pre,post> = <{},{}>; expected <pre,post> = <{},{}>".format(testResult.totalNumTests, preWidth, postWidth, expectedPreWidth, expectedPostWidth))
+		else: testResult += TEST_OKAY
+
+	testResult = TestResult(0, 0)
+
+	test_width_expect(testResult, [                     ], [             ], 0.0, 0, 0)
+	test_width_expect(testResult, [                     ], [             ], 0.0, 0, 1)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 2, 3]], [1, 2, 3      ], 3.0, 2, 0)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 2, 3]], [1, 2, 3      ], 3.0, 2, 1)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3      ], 3.0, 0, 0)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3      ], 2.0, 2, 1)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4   ], 3.0, 0, 0)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4   ], 2.5, 3, 1)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5], 3.0, 4, 0)
+	test_width_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5], 3.0, 4, 1)
+
+	return testResult.result_str()
+
+def test_cvr():
+	def test_cvr_expect(testResult, clauses, varset, expectedCVR, mode = 0):
+		# Load clauses
+		clause_list = cnf_to_clauses_list(clauses)
+		pmi.setClauses(clause_list)
+		varset.append(0)
+
+		# Calculate stats
+		pmi.calculate(varset, mode)
+		cvr = pmi.getCVR()
+		if expectedCVR != cvr and not (math.isnan(expectedCVR) and math.isnan(cvr)):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <cvr> = <{}>; expected <cvr> = <{}>".format(testResult.totalNumTests, cvr, expectedCVR))
+		else: testResult += TEST_OKAY
+
+	testResult = TestResult(0, 0)
+
+	test_cvr_expect(testResult, [                     ], [                ], float("nan"), 0)
+	test_cvr_expect(testResult, [                     ], [                ], float("nan"), 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 2, 3]], [1, 2, 3         ], 2/3., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 2, 3]], [1, 2, 3         ], 2/3., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3         ], 1/3., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3         ], 2/3., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1               ], float("nan"), 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1               ], 2/1., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [1, 2, 3         ], 1/3., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [1, 2, 3         ], 1/3., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [      3, 4      ], float("nan"), 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [      3, 4      ], 2/2., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5   ], 2/5., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5   ], 2/5., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5, 6], 2/5., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [-1, 4, 5]], [1, 2, 3, 4, 5, 6], 2/5., 1)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [1, 2, 3, 4, 5, 6], 2/6., 0)
+	test_cvr_expect(testResult, [[1, 2, 3], [ 4, 5, 6]], [1, 2, 3, 4, 5, 6], 2/6., 1)
+
+	return testResult.result_str()
 
 if __name__ == "__main__":
-	testResults = 0
-
-	testResults += param_expect( 1,  0,  0)
-	testResults += param_expect( 2,  0,  3)
-	testResults += param_expect( 3,  0,  2)
-	testResults += param_expect( 4,  0, 10)
-	testResults += param_expect( 5,  0, 10)
-	testResults += param_expect( 6,  0, 19)
-	testResults += param_expect( 7,  5,  5)
-	testResults += param_expect( 8,  5,  5)
-	testResults += param_expect( 9, 10, 10)
-	testResults += param_expect(10, 10, 10)
-	testResults += param_expect(11,  5, 10)
-	testResults += param_expect(12,  5, 10)
-	testResults += param_expect(13,  5, 19)
-	testResults += param_expect(14, 19, 19)
-	testResults += param_expect(15,  0,  9)
-	testResults += param_expect(16,  4,  9)
-	testResults += param_expect(17,  2,  9)
-	testResults += param_expect(18,  5, 10)
-	testResults += param_expect(19,  0, 10)
-	testResults += param_expect(20,  5,  5)
-	testResults += param_expect(21,  4, 11)
-	testResults += param_expect(22,  5, 10)
-	testResults += param_expect(23, 19, 19)
-
-	totalNumTests = 23
-	print("{}/{} tests passed".format(totalNumTests - testResults, totalNumTests))
+	print("test_basic_merge_res: " + test_basic_merge_res())
+	print("test_var_set:         " + test_var_set())
+	print("test_width:           " + test_width())
+	print("test_cvr:             " + test_cvr())
