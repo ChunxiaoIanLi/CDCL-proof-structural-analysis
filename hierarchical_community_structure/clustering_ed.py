@@ -83,30 +83,38 @@ def compute_intercommunity_vars(g, vertex_clustering):
 
 def update_output_data(
 	path, pmi, g, vertex_clustering,
-	mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data
+	mergeability1norm1_data, mergeability1norm2_data, mergeability2norm1_data, mergeability2norm2_data,
+	modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data,
+	pre_width_data, post_width_data, cvr_data
 ):
 	# Ensure that the output lists are long enough
-	if len(path) > len(mergeabilitynorm1_data):
-		mergeabilitynorm1_data.append([])
-		mergeabilitynorm2_data.append([])
-		modularity_data       .append([])
-		degree_data           .append([])
-		community_size_data   .append([])
-		inter_edges_data      .append([])
-		inter_vars_data       .append([])
-		pre_width_data        .append([])
-		post_width_data       .append([])
+	if len(path) > len(mergeability1norm1_data):
+		mergeability1norm1_data.append([])
+		mergeability1norm2_data.append([])
+		mergeability2norm1_data.append([])
+		mergeability2norm2_data.append([])
+		modularity_data        .append([])
+		degree_data            .append([])
+		community_size_data    .append([])
+		inter_edges_data       .append([])
+		inter_vars_data        .append([])
+		pre_width_data         .append([])
+		post_width_data        .append([])
+		cvr_data               .append([])
 
 	# Update the output lists
-	mergeabilitynorm1_data[len(path)-1].append(str(pmi.getMergeabilityScoreNorm1()))
-	mergeabilitynorm2_data[len(path)-1].append(str(pmi.getMergeabilityScoreNorm2()))
-	modularity_data       [len(path)-1].append(str(g.modularity(vertex_clustering)))
-	degree_data           [len(path)-1].append(str(len(vertex_clustering)))
-	community_size_data   [len(path)-1].append(str(g.vcount()))
-	inter_edges_data      [len(path)-1].append(str(compute_intercommunity_edges(vertex_clustering)))
-	inter_vars_data       [len(path)-1].append(str(compute_intercommunity_vars(g, vertex_clustering)))
-	pre_width_data        [len(path)-1].append(str(pmi.getPreResolutionClauseWidth()))
-	post_width_data       [len(path)-1].append(str(pmi.getPostResolutionClauseWidth()))
+	mergeability1norm1_data[len(path)-1].append(str(pmi.getMergeabilityScore1Norm1()))
+	mergeability1norm2_data[len(path)-1].append(str(pmi.getMergeabilityScore1Norm2()))
+	mergeability2norm1_data[len(path)-1].append(str(pmi.getMergeabilityScore1Norm1()))
+	mergeability2norm2_data[len(path)-1].append(str(pmi.getMergeabilityScore1Norm2()))
+	modularity_data        [len(path)-1].append(str(g.modularity(vertex_clustering)))
+	degree_data            [len(path)-1].append(str(len(vertex_clustering)))
+	community_size_data    [len(path)-1].append(str(g.vcount()))
+	inter_edges_data       [len(path)-1].append(str(compute_intercommunity_edges(vertex_clustering)))
+	inter_vars_data        [len(path)-1].append(str(compute_intercommunity_vars(g, vertex_clustering)))
+	pre_width_data         [len(path)-1].append(str(pmi.getPreResolutionClauseWidth()))
+	post_width_data        [len(path)-1].append(str(pmi.getPostResolutionClauseWidth()))
+	cvr_data               [len(path)-1].append(str(pmi.getCVR()))
 	return
 
 def set_hierarchy_tree_color(hierarchical_tree, current_node, percent, metric):
@@ -119,7 +127,12 @@ def get_vertex_set(g):
 	vertices.append(0)
 	return vertices
 
-def compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data, output_directory):
+def compute_hierarchical_community_structure(
+	g, hierarchical_tree, current_node, path, pmi,
+	mergeability1norm1_data, mergeability1norm2_data, mergeability2norm1_data, mergeability2norm2_data,
+	modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data,
+	pre_width_data, post_width_data, cvr_data, output_directory
+):
 	# Calculate community structure
 	vertex_clustering = g.community_multilevel()
 
@@ -132,6 +145,14 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 	# Calculate instance parameters
 	pmi.calculate(get_vertex_set(g), 1)
 
+	# Update output according to calculated parameters
+	update_output_data(
+		path, pmi, g, vertex_clustering,
+		mergeability1norm1_data, mergeability1norm2_data, mergeability2norm1_data, mergeability2norm2_data,
+		modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data,
+		pre_width_data, post_width_data, cvr_data
+	)
+
 	# Return immediately if no clauses resolve
 	if pmi.getPostResolutionClauseWidth() == 0 or math.isnan(pmi.getPostResolutionClauseWidth()):
 		# Color the node using its mergeability
@@ -139,10 +160,7 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 		return
 
 	# Color the node using its mergeability
-	set_hierarchy_tree_color(hierarchical_tree, current_node, pmi.getMergeabilityScoreNorm1() / 0.5, "mergeability")
-
-	# Update output according to calculated parameters
-	update_output_data(path, pmi, g, vertex_clustering, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data)
+	set_hierarchy_tree_color(hierarchical_tree, current_node, pmi.getMergeabilityScore1Norm1() / 0.5, "mergeability")
 
 	if len(vertex_clustering) > 1:	
 		# Modify hierarchical community structure tree
@@ -155,7 +173,12 @@ def compute_hierarchical_community_structure(g, hierarchical_tree, current_node,
 			current_node = current_max_node - (len(vertex_clustering) - c - 1)
 			temp_path = path[:]
 			temp_path.append(c)
-			compute_hierarchical_community_structure(vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data, output_directory)
+			compute_hierarchical_community_structure(
+				vertex_clustering.subgraph(c), hierarchical_tree, current_node, temp_path, pmi,
+				mergeability1norm1_data, mergeability1norm2_data, mergeability2norm1_data, mergeability2norm2_data,
+				modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data,
+				pre_width_data, post_width_data, cvr_data, output_directory
+			)
 	return
 
 if __name__ == "__main__":
@@ -184,32 +207,43 @@ if __name__ == "__main__":
 	path = [0]
 
 	# Initialize output lists
-	mergeabilitynorm1_data = []
-	mergeabilitynorm2_data = []
-	modularity_data        = []
-	degree_data            = []
-	community_size_data    = []
-	inter_edges_data       = []
-	inter_vars_data        = []
-	pre_width_data         = []
-	post_width_data        = []
-	diameter_data          = []
+	mergeability1norm1_data = []
+	mergeability1norm2_data = []
+	mergeability2norm1_data = []
+	mergeability2norm2_data = []
+	modularity_data         = []
+	degree_data             = []
+	community_size_data     = []
+	inter_edges_data        = []
+	inter_vars_data         = []
+	pre_width_data          = []
+	post_width_data         = []
+	cvr_data                = []
 
 	#output_directory = create_directory(file)
 	output_directory = ""
 	community_structure_style = set_community_structure_style(g)
-	compute_hierarchical_community_structure(g, hierarchical_tree, current_node, path, pmi, mergeabilitynorm1_data, mergeabilitynorm2_data, modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data, pre_width_data, post_width_data, diameter_data, output_directory)
+	compute_hierarchical_community_structure(
+		g, hierarchical_tree, current_node, path, pmi,
+		mergeability1norm1_data, mergeability1norm2_data, mergeability2norm1_data, mergeability2norm2_data,
+		modularity_data, degree_data, community_size_data, inter_edges_data, inter_vars_data,
+		pre_width_data, post_width_data, cvr_data, output_directory
+	)
 
 	# Output hierarchy
 	plot_hierarchical_tree(hierarchical_tree, file, 'modularity'  )
 	plot_hierarchical_tree(hierarchical_tree, file, 'mergeability')
 
 	# Output parameters
-	write_data(file, ".mergeabilitynorm1", mergeabilitynorm1_data)
-	write_data(file, ".mergeabilitynorm2", mergeabilitynorm2_data)
-	write_data(file, ".degree"           , degree_data           )
-	write_data(file, ".community_size"   , community_size_data   )
-	write_data(file, ".inter_edges"      , inter_edges_data      )
-	write_data(file, ".inter_vars"       , inter_vars_data       )
-	write_data(file, ".pre_width"        , pre_width_data        )
-	write_data(file, ".post_width"       , post_width_data       )
+	write_data(file, ".mergeability1norm1", mergeability1norm1_data)
+	write_data(file, ".mergeability1norm2", mergeability1norm2_data)
+	write_data(file, ".mergeability2norm1", mergeability2norm1_data)
+	write_data(file, ".mergeability2norm2", mergeability2norm2_data)
+	write_data(file, ".degree"            , degree_data            )
+	write_data(file, ".community_size"    , community_size_data    )
+	write_data(file, ".inter_edges"       , inter_edges_data       )
+	write_data(file, ".inter_vars"        , inter_vars_data        )
+	write_data(file, ".pre_width"         , pre_width_data         )
+	write_data(file, ".post_width"        , post_width_data        )
+	write_data(file, ".cvr"               , cvr_data               )
+	
