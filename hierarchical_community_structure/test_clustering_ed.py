@@ -196,41 +196,58 @@ def test_compute_hierarchical_community_structure_expect(n, clauses,
 
 def test_compute_hierarchical_community_structure():
 	test_result = 0
-	num_tests = 2 * 12
+	num_tests = 3 * 12
 	nan = float("nan")
 
 	# Single community
 	test_result += test_compute_hierarchical_community_structure_expect(3,
 		[[1, 2, 3]],
-		[[str(nan)]],
-		[[str(0.0)]],
-		[[str(nan)]],
-		[[str(0.0)]],
-		[[str(0.0)]],
-		[[str(1)]],
-		[[str(3)]],
-		[[str(0)]],
-		[[str(0)]],
-		[[str(3.0)]],
-		[[str(0.0)]],
-		[[str(1/3.)]]
+		[[str(nan) ]], # mergeability1norm1
+		[[str(0.0) ]], # mergeability1norm2
+		[[str(nan) ]], # mergeability2norm1
+		[[str(0.0) ]], # mergeability2norm2
+		[[str(0.0) ]], # modularity        
+		[[str(1)   ]], # degree            
+		[[str(3)   ]], # community_size    
+		[[str(0)   ]], # inter_edges       
+		[[str(0)   ]], # inter_vars        
+		[[str(3.0) ]], # pre_width         
+		[[str(0.0) ]], # post_width        
+		[[str(1/3.)]]  # cvr               
 	)
 
 	# Disjoint communities
 	test_result += test_compute_hierarchical_community_structure_expect(6,
 		[[1, 2, 3], [4, 5, 6]],
-		[[str(nan) ], [str(nan) , str(nan) ]],
-		[[str(0.0) ], [str(0.0) , str(0.0) ]],
-		[[str(nan) ], [str(nan) , str(nan) ]],
-		[[str(0.0) ], [str(0.0) , str(0.0) ]],
-		[[str(0.5) ], [str(0.0) , str(0.0) ]],
-		[[str(2)   ], [str(1)   , str(1)   ]],
-		[[str(6)   ], [str(3)   , str(3)   ]],
-		[[str(0)   ], [str(0)   , str(0)   ]],
-		[[str(0)   ], [str(0)   , str(0)   ]],
-		[[str(3.0) ], [str(3.0) , str(3.0) ]],
-		[[str(0.0) ], [str(0.0) , str(0.0) ]],
-		[[str(2/6.)], [str(1/3.), str(1/3.)]]
+		[[str(nan) ]], # mergeability1norm1
+		[[str(0.0) ]], # mergeability1norm2
+		[[str(nan) ]], # mergeability2norm1
+		[[str(0.0) ]], # mergeability2norm2
+		[[str(0.5) ]], # modularity        
+		[[str(2)   ]], # degree            
+		[[str(6)   ]], # community_size    
+		[[str(0)   ]], # inter_edges       
+		[[str(0)   ]], # inter_vars        
+		[[str(3.0) ]], # pre_width         
+		[[str(0.0) ]], # post_width        
+		[[str(2/6.)]]  # cvr               
+	)
+
+	# Two resolving pairs (non-mergy)
+	test_result += test_compute_hierarchical_community_structure_expect(6,
+		[[1, 2, 3], [4, 5, 6], [-1, -4]],
+		[[str(0.0) ], [str(0.0) , str(0.0) ]], # mergeability1norm1
+		[[str(0.0) ], [str(0.0) , str(0.0) ]], # mergeability1norm2
+		[[str(0.0) ], [str(0.0) , str(0.0) ]], # mergeability2norm1
+		[[str(0.0) ], [str(0.0) , str(0.0) ]], # mergeability2norm2
+		[[str(5/14.)],[str(0.0) , str(0.0) ]], # modularity        
+		[[str(2)   ], [str(1)   , str(1)   ]], # degree            
+		[[str(6)   ], [str(3)   , str(3)   ]], # community_size    
+		[[str(1)   ], [str(0)   , str(0)   ]], # inter_edges       
+		[[str(2)   ], [str(0)   , str(0)   ]], # inter_vars        
+		[[str(8/3.)], [str(2.0) , str(2.0) ]], # pre_width         
+		[[str(3.0) ], [str(2.0) , str(2.0) ]], # post_width        
+		[[str(3/6.)], [str(2/3.), str(2/3.)]]  # cvr                
 	)
 
 	print("test_inter_community_edges: {}/{} tests passed".format(num_tests - test_result, num_tests))
