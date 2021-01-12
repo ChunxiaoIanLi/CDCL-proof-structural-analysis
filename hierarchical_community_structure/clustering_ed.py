@@ -7,7 +7,6 @@ from random import randrange
 import ctypes
 import math
 from PMILib import PMI
-lib = ctypes.CDLL('/home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/scripts/resolvability/libmergeability.so')
 
 def write_data(outfile, extension, data):
 	outfilename = outfile + extension
