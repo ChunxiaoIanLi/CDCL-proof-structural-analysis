@@ -4,82 +4,70 @@ import os
 import random
 
 def generateUniformVec(n, m, k):
-    ave = int(m*k/n)
-    remainder= int((m*k)%n)
-    vec = [ave]*n
-    while remainder > 0:
-        vec[remainder-1]+=1
-        remainder-=1
-    return vec
+	"""
+	Generate a uniform degree vector where variable occurences are distributed evenly
+	"""
+	total_degree = m * k
+	avg          = int(total_degree / n)
+	remainder    = int(total_degree % n)
+	vec          = [avg] * n
+	for i in range(0, remainder): vec[i] += 1
+	return vec
 
 def generatePowerlawVec(n, m, k):
-    vec=generateUniformVec(int(n/2), m, k)
-    
-    for i in range(len(vec)):
-        vec[i]-=1
-        vec.append(1)
+	"""
+	Generate an unbalanced degree vector
+	Important note: this does not actually generate a powerlaw degree vector
+	"""
+	total_degree = m * k
+	if total_degree < n: return [1] * (total_degree) + [0] * (n - total_degree)
+	avg       = int((total_degree - n) / int(n / 2))
+	remainder = int((total_degree - n) % int(n / 2))
+	vec = [1] * n
+	for i in range(int(n / 2)): vec[i] += avg
+	for i in range(remainder):  vec[i] += 1
 
-    if n%2 == 1:
-        vec[(m*k)%(n/2)-1]-=1
-        vec.append(1)
-    return vec
+	return vec
 
 def generateMediumVec(n, m, k):
     #somehow vec[0] is not modified after this call?
-    vec=generatePowerlawVec(n, m, k)
-    max=vec[0]-2
-    for i in range(n/2):
-        diff=random.randint(0, max)
-        vec[i]-=diff
-        vec[-i]+=diff
-    return vec
+	vec = generatePowerlawVec(n, m, k)
+	max_degree = vec[0] - 2
+	for i in range(int(n / 2)):
+		diff = random.randint(0, max_degree)
+		vec[ i] -= diff
+		vec[-i] += diff
+	return vec
 
 def generateCummulative(vec):
-    cummulative_vec=[vec[0]]
-    for i in vec[1:]:
-        cummulative_vec.append(i + cummulative_vec[-1])
-    return cummulative_vec
+	cumulative_vec = [vec[0]]
+	for i in vec[1:]: cumulative_vec.append(i + cumulative_vec[-1])
+	return cumulative_vec
 
-def vecsum(vec):
-    sum = 0
-    for i in vec:
-        sum+=i
-    return sum
+def get_k_lits(tmp_clause, m, k, cumulative_vec):
+	for l in range(k):
+		found = False
+		while not found:
+			r = random.randint(0, m * k)
+			for i in range(len(cumulative_vec)):
+				if r <= cumulative_vec[i]:
+					if (i + 1 not in tmp_clause) and (-i - 1 not in tmp_clause):
+						tmp_clause.append(i + 1)
+						found = True
+						if random.randint(0, 1): tmp_clause[-1] *= -1
+						break
+	tmp_clause.sort()
+	return tmp_clause
 
-def get_k_lits(temp_clause, m, k, cummulative_vec):
-    for l in range(k):
-        found = False
-        while not found:
-            r = random.randint(0, m*k)
-            for i in range(len(cummulative_vec)):
-                if r <= cummulative_vec[i]:
-                    if i+1 not in temp_clause:
-                        temp_clause.append(i+1)
-                        found = True
-                        polarity=random.randint(0,1)
-                        if polarity == 0:
-                            temp_clause[-1] *= -1
-                        break;
-    temp_clause.sort()
-    return temp_clause
-
-def clause_existing(cnf, clause):
-    if clause in cnf:
-        return True
-    return False
-
-def get_new_clause(cnf, clause, m, k, cummulative_vec):
-    tmp_clause = get_k_lits(clause, m, k, cummulative_vec)
-    while clause_existing(cnf, tmp_clause) is True:
-        tmp_clause = get_k_lits(clause, m, k, cummulative_vec)
-    cnf.append(tmp_clause)
-    return
+def get_new_clause(cnf, clause, m, k, cumulative_vec):
+	tmp_clause = get_k_lits(clause[:], m, k, cumulative_vec)
+	while tmp_clause in cnf:
+		tmp_clause = get_k_lits(clause[:], m, k, cumulative_vec)
+	cnf.append(tmp_clause)
+	return
 
 def var_to_lit(var):
-    polarity=random.randint(0,1)
-    if polarity == 0:
-        return var*-1
-    return var
+	return var if random.randint(0, 1) else var * -1
 
 def same_community(u, v, community_id_upper_bounds):
     previous = 0
@@ -109,7 +97,7 @@ def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upp
 
         temp_clause.sort()
         if not all_same_community(temp_clause, community_id_upper_bounds):
-            if not clause_existing(cnf, temp_clause):
+            if temp_clause not in cnf:
                 return temp_clause
 
 
