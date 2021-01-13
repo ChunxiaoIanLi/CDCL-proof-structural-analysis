@@ -53,14 +53,15 @@ def get_lit(cumulative_vec, m, k):
 	r = random.randint(0, m * k)
 	for i, cumulative_sum in enumerate(cumulative_vec):
 		if r <= cumulative_sum: return var_to_lit(i + 1)
-	assert(False, "The program should never get here")
-	return 0
+
+	# The program should never get here!
+	assert False
 
 def get_k_lits(tmp_clause, m, k, cumulative_vec):
 	# Sample distinct variables until the clause is size k
 	while len(tmp_clause) < k:
 		while True:
-			lit = get_lit(cumulative_vec)
+			lit = get_lit(cumulative_vec, m, k)
 			if (lit not in tmp_clause) and (-lit not in tmp_clause): break
 		tmp_clause.append(lit)
 	
@@ -93,6 +94,7 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 		random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
 		tmp_clause.append(var_to_lit(random_var))
 	tmp_clause.sort()
+	return tmp_clause
 
 def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upper_bounds):
     while True:
