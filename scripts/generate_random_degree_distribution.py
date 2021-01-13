@@ -44,137 +44,98 @@ def generateCummulative(vec):
 	for i in vec[1:]: cumulative_vec.append(i + cumulative_vec[-1])
 	return cumulative_vec
 
+def var_to_lit(var):
+	# Select a variable with a random polarity
+	return var if random.randint(0, 1) else var * -1
+
+def get_lit(cumulative_vec, m, k):
+	# Sample literal according to the degree distribution
+	r = random.randint(0, m * k)
+	for i, cumulative_sum in enumerate(cumulative_vec):
+		if r <= cumulative_sum: return var_to_lit(i + 1)
+	assert(False, "The program should never get here")
+	return 0
+
 def get_k_lits(tmp_clause, m, k, cumulative_vec):
-	for l in range(k):
-		found = False
-		while not found:
-			r = random.randint(0, m * k)
-			for i in range(len(cumulative_vec)):
-				if r <= cumulative_vec[i]:
-					if (i + 1 not in tmp_clause) and (-i - 1 not in tmp_clause):
-						tmp_clause.append(i + 1)
-						found = True
-						if random.randint(0, 1): tmp_clause[-1] *= -1
-						break
+	# Sample distinct variables until the clause is size k
+	while len(tmp_clause) < k:
+		while True:
+			lit = get_lit(cumulative_vec)
+			if (lit not in tmp_clause) and (-lit not in tmp_clause): break
+		tmp_clause.append(lit)
+	
+	# Sort clause for easy comparison
 	tmp_clause.sort()
 	return tmp_clause
 
 def get_new_clause(cnf, clause, m, k, cumulative_vec):
-	tmp_clause = get_k_lits(clause[:], m, k, cumulative_vec)
-	while tmp_clause in cnf:
+	# Sample a new clause of size k
+	while True:
 		tmp_clause = get_k_lits(clause[:], m, k, cumulative_vec)
-	cnf.append(tmp_clause)
-	return
+		if tmp_clause not in cnf: return tmp_clause
 
-def var_to_lit(var):
-	return var if random.randint(0, 1) else var * -1
-
-def same_community(u, v, community_id_upper_bounds):
-    previous = 0
-    for current in community_id_upper_bounds:
-        if previous <= u < current and previous <= v < current:
-            return True
-        previous = current
-    return False
+def get_community(v, community_id_upper_bounds):
+	# Get the largest upper bound less than the variable
+	for i, upper_bound in enumerate(community_id_upper_bounds):
+		if v < upper_bound: return community_id_upper_bounds[i - 1]
 
 def all_same_community(lits, community_id_upper_bounds):
-    result = True
-    for i in range(len(lits)):
-        for j in range(i+1, len(lits)):
-            if not same_community(abs(lits[i]), abs(lits[j]), community_id_upper_bounds):
-                return False
-    return result
+	# Determine if all literals are in the same community
+	if len(lits) == 0: return True
+	required_community = get_community(lits[0], community_id_upper_bounds)
+	return all(get_community(lit, community_id_upper_bounds) for lit in lits)
+
+def select_from_random_communities(clause, inter_vars_per_community, k):
+	# Randomly sample variables from random communities
+	tmp_clause = clause[:]
+	while len(tmp_clause) < k:
+		random_comm = random.randint(0, len(inter_vars_per_community) - 1)
+		random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
+		tmp_clause.append(var_to_lit(random_var))
+	tmp_clause.sort()
 
 def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upper_bounds):
     while True:
-        temp_clause = clause[:]
-        for l in range(k):
-            random_comm = random.randint(0, len(inter_vars_per_community)-1)
-            random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
-            if random_var == 0  :
-                print(random_var)
-            temp_clause.append(var_to_lit(random_var))
+		# Randomly sample variables from random communities
+		# In the future: sample variables according to degree distribution
+        tmp_clause = select_from_random_communities(clause, inter_vars_per_community, k)
 
-        temp_clause.sort()
-        if not all_same_community(temp_clause, community_id_upper_bounds):
-            if temp_clause not in cnf:
-                return temp_clause
+		# Check if the clause is eligible to be be put into the CNF
+        if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
+			return tmp_clause
 
-
-def generateRandomFormula(n, m, k, cummulative_vec):
-    cnf = []
-    clauses = 0
-    # phase 1: make sure every variable is covered
-    for variable_id in range(n):
-        clause = [variable_id+1]
-        get_new_clause(cnf, clause, m, k-1, cummulative_vec)
-
-    for clause_id in range(m-n):
-        clause = []
-        get_new_clause(cnf, clause, m, k, cummulative_vec)
-    return cnf
+def generateRandomFormula(n, m, k, cumulative_vec):
+	cnf = []
+	# Phase 1: make sure every variable is covered
+	for i in range(n    ): cnf.append(get_new_clause(cnf, [i + 1], m, k, cumulative_vec))
+	# Phase 2: add additional clauses according to degree distribution
+	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], m, k, cumulative_vec))
+	return cnf
 
 def generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_vars):
-    degree = len(community_id_upper_bounds) - 1
+	# Select inter-community variables
+	degree = len(community_id_upper_bounds) - 1
+	inter_vars_per_community = [
+		random.sample(
+			range(community_id_upper_bounds[i] + 1, community_id_upper_bounds[i + 1] + 1),
+			inter_vars / degree
+		) for i in range(degree)
+	]
 
-    inter_vars_per_community = []
-    actual_inter_vars = 0
+	# Phase 1: make sure every inter-community variable appears in some clause
+	for com in inter_vars_per_community:
+		for iv in com:
+			cnf.append(select_inter_vars(
+				cnf, [var_to_lit(iv)], inter_vars_per_community, k, community_id_upper_bounds
+			))
 
-    for i in range(0, degree):
-        actual_inter_vars += inter_vars/degree
-        random_vars = random.sample(range(community_id_upper_bounds[i]+1, community_id_upper_bounds[i+1]+1), inter_vars/degree)
-        inter_vars_per_community.append(random_vars)
+	# Phase 2: distribute the remaining clauses randomly amongst the intercommunity variables
+	for c in range(int(inter_vars * cvr) - sum(len(com) for com in inter_vars_per_community)):
+		cnf.append(select_inter_vars(cnf, [], inter_vars_per_community, k, community_id_upper_bounds))
 
-    actual_inter_cls = int(actual_inter_vars * cvr)
-
-    inter_clause_count = 0
-    #phase 1: makes sure every inter_var appears in some clause
-    for com_id, com in enumerate(inter_vars_per_community):
-        for iv in com:
-            temp_clause = [var_to_lit(iv)]
-            temp_clause = select_inter_vars(cnf, temp_clause, inter_vars_per_community, k-1, community_id_upper_bounds)
-            cnf.append(temp_clause)
-            inter_clause_count += 1
-
-    #phase 2: distribute the remaining clauses randomly
-    for c in range(actual_inter_cls - inter_clause_count):
-        temp_clause = []
-        temp_clause = select_inter_vars(cnf, temp_clause, inter_vars_per_community, k, community_id_upper_bounds)
-        cnf.append(temp_clause)
-
-    return cnf
+	return cnf
 
 if __name__ == "__main__":
-    n=int(sys.argv[1])
-    m=int(sys.argv[2])
-    k=int(sys.argv[3])
-
-# #generating uniform
-# uniformvec=generateUniformVec(n, m, k)
-# cummulative_vec=generateCummulative(uniformvec)
-# for i in range(200):
-#     outf=open("instances/uniform/{0}.cnf".format(i),"w")
-#     outf.write("p cnf {0} {1}\n".format(n, m))
-#     generateRandomFormula(n, m, k, cummulative_vec, outf)
-#     outf.close()
-
-# # #generating powerlaw
-# powerlawvec=generatePowerlawVec(n, m, k)
-# cummulative_vec=generateCummulative(powerlawvec)
-# for i in range(200):
-#     outf=open("instances/powerlaw/{0}.cnf".format(i),"w")
-#     outf.write("p cnf {0} {1}\n".format(n, m))
-#     generateRandomFormula(n, m, k, cummulative_vec, outf)
-#     outf.close()
-
-# # #generating medium
-# for i in range(200):
-#     mediumvec=generateMediumVec(n, m, k)
-#     cummulative_vec=generateCummulative(mediumvec)
-#     outf=open("instances/medium/{0}.cnf".format(i),"w")
-#     outf.write("p cnf {0} {1}\n".format(n, m))
-#     generateRandomFormula(n, m, k, cummulative_vec, outf)
-#     outf.close()
-
-
-
+	n = int(sys.argv[1])
+	m = int(sys.argv[2])
+	k = int(sys.argv[3])

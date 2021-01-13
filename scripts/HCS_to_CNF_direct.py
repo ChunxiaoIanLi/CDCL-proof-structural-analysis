@@ -29,7 +29,7 @@ def add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, c
 	total_vars = community_id_upper_bounds[-1]
 	inter_vars = int(total_vars * inter_vars_fraction)
 	degree = len(community_id_upper_bounds) - 1
-	actual_inter_vars = degree * (inter_vars / degree)
+	actual_inter_vars = degree * (inter_vars // degree)
 
 	# Actually add the edges to the CNFs
 	return generate_random_degree_distribution.generateRandomInterFormula(community_id_upper_bounds, cvr[level-1], k, cnf, actual_inter_vars)
