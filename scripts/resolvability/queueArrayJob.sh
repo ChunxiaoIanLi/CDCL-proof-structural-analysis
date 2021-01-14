@@ -7,7 +7,7 @@ fi
 # Set up parameters
 INPUT_FILE=$1
 START_INDEX=$2
-END_INDEX=$((START_INDEX + $3))
+END_INDEX=$((START_INDEX + $3 - 1))
 SCRIPT_FILE="arrayJobScript.sh"
 SCRIPT="python /home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/hierarchical_community_structure/clustering_ed.py \${INSTANCE_NAME}"
 #SCRIPT="/home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/scripts/resolvability/countResolvable -d \${INSTANCE_NAME}"
@@ -21,7 +21,7 @@ echo "#SBATCH --mem=5G"                                                   >> "${
 echo "#SBATCH --job-name=countRes"                                        >> "${SCRIPT_FILE}"
 echo "#SBATCH --array=${START_INDEX}-${END_INDEX}"                        >> "${SCRIPT_FILE}"
 echo ""                                                                   >> "${SCRIPT_FILE}"
-echo "source /home/jt2chung/sat/bin/activate"
+echo "source /home/jt2chung/sat/bin/activate"                             >> "${SCRIPT_FILE}"
 echo "INSTANCE_NAME=\`sed -n \${SLURM_ARRAY_TASK_ID}p ${INPUT_FILE}\`"    >> "${SCRIPT_FILE}"
 echo "${SCRIPT}"                                                          >> "${SCRIPT_FILE}"
 
