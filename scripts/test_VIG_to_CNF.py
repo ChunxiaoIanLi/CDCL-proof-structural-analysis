@@ -29,7 +29,6 @@ def isomorphic(dir_name, file, m, k):
 
     # check if original cnf and output cnf's graphs are isomorphic
     iso = g_orig.isomorphic(g_out)
-
     return iso
 
 if __name__ == "__main__":
