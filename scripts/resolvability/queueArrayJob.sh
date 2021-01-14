@@ -17,7 +17,7 @@ SCRIPT="python /home/jt2chung/sha1-unsat/CDCL-proof-structural-analysis/hierarch
 echo "#!/bin/bash"                                                         > "${SCRIPT_FILE}"
 echo "#SBATCH --account=def-vganesh"                                      >> "${SCRIPT_FILE}"
 echo "#SBATCH --time=0:00:5000"                                           >> "${SCRIPT_FILE}"
-echo "#SBATCH --mem=5G"                                                   >> "${SCRIPT_FILE}"
+echo "#SBATCH --mem=10G"                                                   >> "${SCRIPT_FILE}"
 echo "#SBATCH --job-name=countRes"                                        >> "${SCRIPT_FILE}"
 echo "#SBATCH --array=${START_INDEX}-${END_INDEX}"                        >> "${SCRIPT_FILE}"
 echo ""                                                                   >> "${SCRIPT_FILE}"
