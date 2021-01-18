@@ -34,19 +34,18 @@ def generatePowerlawVec(n, m, k):
 # generates a degree vector with n variables, m clauses and width k that is not too balanced and
 # also not too unbalanced
 def generateMediumVec(n, m, k):
-    #somehow vec[0] is not modified after this call?
 	vec = generatePowerlawVec(n, m, k)
 	max_degree = vec[0] - 2
-	for i in range(int(n / 2)):
+	for i in range(n // 2):
 		diff = random.randint(0, max_degree)
-		vec[ i] -= diff
-		vec[-i] += diff
+		vec[ i    ] -= diff
+		vec[-i - 1] += diff
 	return vec
 
 # input:
 #   vec                     :   a degree vector [a, b, c, d, ...]
 # output:
-#   cummulative_vec         :   [a, a+b, a+b+c, a+b+c+d, ...]
+#   cumulative_vec         :   [a, a+b, a+b+c, a+b+c+d, ...]
 def generateCummulative(vec):
 	if len(vec) == 0: return []
 	cumulative_vec = [vec[0]]
@@ -70,7 +69,7 @@ def get_lit(cumulative_vec):
 # input:
 #   tmp_clause              :   an array that either conains zero or one integer
 #   k                       :   clause width
-#   cumulative_vec          :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#   cumulative_vec          :   the cumulative_vec of degree vector [a, b, c, d, ...] 
 #                               is [a, a+b, a+b+c, a+b+c+d, ...]
 # output:
 #   tmp_clause              :   an intra-community clause of width k
@@ -90,7 +89,7 @@ def get_k_lits(tmp_clause, k, cumulative_vec):
 #   cnf                         :   A 2D array of clauses
 #   clause                      :   an array that either conains zero or one integer
 #   k                           :   clause width
-#   cumulative_vec              :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#   cumulative_vec              :   the cumulative_vec of degree vector [a, b, c, d, ...] 
 #                                   is [a, a+b, a+b+c, a+b+c+d, ...]
 # output:
 #   cnf                         :   the input cnf with one more clause
