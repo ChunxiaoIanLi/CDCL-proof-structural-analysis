@@ -22,26 +22,6 @@ def expect(testResult, actual, expected):
 	print("Test {} failed: <actual> = <{}>; <expected> = <{}>".format(testResult.totalNumTests, actual, expected))
 	return TEST_FAIL
 
-def test_get_n():
-	def expect_get_n(testResult, subcnfs, expected_n):
-		testResult += expect(testResult, HCS_to_CNF_direct.get_n(subcnfs), expected_n)
-
-	testResult = TestResult()
-	
-	expect_get_n(testResult, [          ], 0)
-	expect_get_n(testResult, [[1       ]], 1)
-	expect_get_n(testResult, [[-1      ]], 1)
-	expect_get_n(testResult, [[ 1,  2,  3]], 3)
-	expect_get_n(testResult, [[-1, -2, -3]], 3)
-	expect_get_n(testResult, [[ 3,  2,  1]], 3)
-	expect_get_n(testResult, [[-3, -2, -1]], 3)
-	expect_get_n(testResult, [[ 1, -3,  2]], 3)
-	expect_get_n(testResult, [[1], [ 2], [3]], 3)
-	expect_get_n(testResult, [[1], [-3], [2]], 3)
-	expect_get_n(testResult, [[1, 3, 5], [2, 6, -3], [7, 4, 2]], 7)
-
-	return testResult.result_str()
-
 def test_combine_subcnfs():
 	def expect_combine_subcnfs(testResult, subcnfs, expected_cnf, expected_upper_bounds):
 		actual_cnf, actual_upper_bounds = HCS_to_CNF_direct.combine_subcnfs(subcnfs)
@@ -175,31 +155,6 @@ def test_generateCumulative():
 
 	return testResult.result_str()
 
-def test_same_community():
-	def expect_same_community(testResult, u, v, community_id_upper_bounds, expectation):
-		testResult += expect(testResult, generate_random_degree_distribution.same_community(u, v, community_id_upper_bounds), expectation)
-	
-	testResult = TestResult()
-
-	expect_same_community(testResult,  1,  1, [0, 1], True)
-	expect_same_community(testResult,  1,  1, [0, 2], True)
-	expect_same_community(testResult,  1,  2, [0, 2], True)
-	expect_same_community(testResult,  1,  2, [0, 1, 2], False)
-	expect_same_community(testResult,  2,  2, [0, 1, 2], True)
-	expect_same_community(testResult, 10, 20, [0, 10, 20, 30, 40], False)
-	expect_same_community(testResult, 10, 15, [0, 10, 20, 30, 40], True)
-	expect_same_community(testResult, 15, 25, [0, 10, 20, 30, 40], False)
-	expect_same_community(testResult, 24, 25, [0, 10, 20, 30, 40], True)
-	expect_same_community(testResult, 25, 25, [0, 10, 20, 30, 40], True)
-	expect_same_community(testResult,  9, 10, [0, 10, 20, 30, 40], True)
-	expect_same_community(testResult, 10, 11, [0, 10, 20, 30, 40], False)
-	expect_same_community(testResult,  9, 11, [0, 10, 20, 30, 40], False)
-	expect_same_community(testResult, 19, 20, [0, 10, 20, 30, 40], True)
-	expect_same_community(testResult, 20, 21, [0, 10, 20, 30, 40], False)
-	expect_same_community(testResult, 19, 21, [0, 10, 20, 30, 40], False)
-
-	return testResult.result_str()
-
 def test_all_same_community():
 	def expect_all_same_community(testResult, literals, community_id_upper_bounds, expectation):
 		testResult += expect(testResult, generate_random_degree_distribution.all_same_community(literals, community_id_upper_bounds), expectation)
@@ -210,11 +165,11 @@ def test_all_same_community():
 	expect_all_same_community(testResult, [-1,  1], [0, 1], True)
 	expect_all_same_community(testResult, [ 1,  1], [0, 2], True)
 	expect_all_same_community(testResult, [-1,  1], [0, 2], True)
-	expect_all_same_community(testResult, [ 1,  2], [0, 1, 2], True)
-	expect_all_same_community(testResult, [-1,  2], [0, 1, 2], True)
-	expect_all_same_community(testResult, [ 1, -2], [0, 1, 2], True)
+	expect_all_same_community(testResult, [ 1,  2], [0, 1, 2], False)
+	expect_all_same_community(testResult, [-1,  2], [0, 1, 2], False)
+	expect_all_same_community(testResult, [ 1, -2], [0, 1, 2], False)
 	expect_all_same_community(testResult, [10, 20], [0, 10, 20, 30, 40], False)
-	expect_all_same_community(testResult, [10, 15], [0, 10, 20, 30, 40], True)
+	expect_all_same_community(testResult, [10, 15], [0, 10, 20, 30, 40], False)
 	expect_all_same_community(testResult, [15, 25], [0, 10, 20, 30, 40], False)
 	expect_all_same_community(testResult, [24, 25], [0, 10, 20, 30, 40], True)
 	expect_all_same_community(testResult, [25, 25], [0, 10, 20, 30, 40], True)
@@ -232,22 +187,18 @@ def test_all_same_community():
 	expect_all_same_community(testResult, [19,-21], [0, 10, 20, 30, 40], False)
 
 	expect_all_same_community(testResult, [10, 20, 30], [0, 10, 20, 30, 40], False)
-	expect_all_same_community(testResult, [10, 11, 12], [0, 10, 20, 30, 40], True)
-	expect_all_same_community(testResult, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19], [0, 10, 20, 30, 40], True)
+	expect_all_same_community(testResult, [11, 12, 13], [0, 10, 20, 30, 40], True)
+	expect_all_same_community(testResult, [11, 12, 13, 14, 15, 16, 17, 18, 19, 20], [0, 10, 20, 30, 40], True)
+	expect_all_same_community(testResult, [11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 10], [0, 10, 20, 30, 40], False)
 	expect_all_same_community(testResult, [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], [0, 10, 20, 30, 40], False)
-	expect_all_same_community(testResult, [10, 20, 11, 12, 13, 14, 15, 16, 17, 18, 19], [0, 10, 20, 30, 40], False)
-	expect_all_same_community(testResult, [10, 11, 12, 13, 20, 14, 15, 16, 17, 18, 19], [0, 10, 20, 30, 40], False)
+	expect_all_same_community(testResult, [11, 12, 13, 10, 14, 15, 16, 17, 18, 19, 20], [0, 10, 20, 30, 40], False)
 
 	return testResult.result_str()
 
 def test_get_k_lits():
 	def expect_get_k_lits(testResult, temp_clause, k, cumulative_vec):
 		# Since this function makes use of randomness, we just check invariants
-		prev_size = len(temp_clause)
 		clause = generate_random_degree_distribution.get_k_lits(temp_clause, k, cumulative_vec)
-
-		# Check size of input
-		testResult += expect(testResult, len(temp_clause), prev_size)
 
 		# Check number of variables
 		clause_vars = set([abs(l) for l in clause])
@@ -270,12 +221,12 @@ def test_get_k_lits():
 	
 	testResult = TestResult()
 
-	expect_get_k_lits(testResult, [ ], 3, [10, 20, 30, 40])
-	expect_get_k_lits(testResult, [ ], 4, [10, 20, 30, 40])
-	expect_get_k_lits(testResult, [ ], 5, [10, 20, 30, 40])
-	expect_get_k_lits(testResult, [1], 3, [10, 20, 30, 40])
-	expect_get_k_lits(testResult, [1], 4, [10, 20, 30, 40])
-	expect_get_k_lits(testResult, [1], 5, [10, 20, 30, 40])
+	expect_get_k_lits(testResult, [ ], 3, [10, 20, 30, 40, 50])
+	expect_get_k_lits(testResult, [ ], 4, [10, 20, 30, 40, 50])
+	expect_get_k_lits(testResult, [ ], 5, [10, 20, 30, 40, 50])
+	expect_get_k_lits(testResult, [1], 3, [10, 20, 30, 40, 50])
+	expect_get_k_lits(testResult, [1], 4, [10, 20, 30, 40, 50])
+	expect_get_k_lits(testResult, [1], 5, [10, 20, 30, 40, 50])
 
 	return testResult.result_str()
 
@@ -297,7 +248,7 @@ def test_generateRandomFormula():
 		if success: testResult += TEST_OKAY
 
 		# Check that the largest generated variable falls within expected range
-		largest_var = max(max(abs(l) for l in c) for c in cnf)
+		largest_var = max(max(abs(l) for l in c) for c in [[0]] + cnf)
 		if largest_var > n:
 			testResult += TEST_FAIL
 			print("Test {} failed: <actual> = <{}>; expected <= {}".format(testResult.totalNumTests, largest_var, n))
@@ -305,18 +256,12 @@ def test_generateRandomFormula():
 
 	testResult = TestResult()
 
-	expect_generateRandomFormula(testResult, 40,   0, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,   1, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,   2, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,   3, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,   4, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,   5, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,  10, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,  20, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,  30, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,  40, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40,  80, 3, [10, 20, 30, 40])
-	expect_generateRandomFormula(testResult, 40, 160, 3, [10, 20, 30, 40])
+	expect_generateRandomFormula(testResult, 7,  3, 3, [ 2,  4,  5,  6,  7,  8,  9])
+	expect_generateRandomFormula(testResult, 7,  4, 3, [ 2,  4,  6,  8, 10, 11, 12])
+	expect_generateRandomFormula(testResult, 7,  5, 3, [ 3,  5,  7,  8, 11, 13, 15])
+	expect_generateRandomFormula(testResult, 7, 10, 3, [ 5, 10, 14, 18, 22, 26, 30])
+	expect_generateRandomFormula(testResult, 7, 20, 3, [ 9, 18, 27, 36, 44, 52, 60])
+	expect_generateRandomFormula(testResult, 7, 30, 3, [13, 26, 39, 42, 55, 68, 90])
 
 	return testResult.result_str()
 
@@ -328,12 +273,12 @@ def test_generateRandomInterFormula():
 		inter_cnf = cnf[prev_size:]
 
 		# Check number of inter-community variables
-		n = len(set([abs(l) for c in clause for l in c]))
+		n = len(set([abs(l) for c in inter_cnf for l in c]))
 		degree = len(community_id_upper_bounds) - 1
 		testResult += expect(testResult, n, degree * (inter_vars // degree))
 
 		# Check that the largest generated variable falls within expected range
-		largest_var = max(max(abs(l) for l in c) for c in clause)
+		largest_var = max(max(abs(l) for l in c) for c in [[0]] + inter_cnf)
 		if largest_var > community_id_upper_bounds[-1]:
 			testResult += TEST_FAIL
 			print("Test {} failed: <actual> = <{}>; expected <= {}".format(testResult.totalNumTests, largest_var, community_id_upper_bounds[-1]))
@@ -354,26 +299,24 @@ def test_generateRandomInterFormula():
 
 	testResult = TestResult()
 
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [   ], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [[1]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [[1], [2, 3, 4]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 4, [   ], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 4, [[1]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 4, [[1], [2, 3, 4]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [   ], 5)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [[1]], 5)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20, 30, 40, 50], 4., 3, [[1], [2, 3, 4]], 5)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [   ], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1]], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1], [2, 3, 4]], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [   ], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [[1]], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [[1], [2, 3, 4]], 4)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [   ], 5)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1]], 5)
+	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1], [2, 3, 4]], 5)
 
 	return testResult.result_str()
 
 if __name__ == "__main__":
-	print("test_get_n:                                   " + test_get_n())
 	print("test_combine_subcnfs:                         " + test_combine_subcnfs())
 	print("test_add_edges_to_combined_disconnected_cnfs: " + test_add_edges_to_combined_disconnected_cnfs())
 	print("test_generateUniformVec:                      " + test_generateUniformVec())
 	print("test_generatePowerlawVec:                     " + test_generatePowerlawVec())
 	print("test_generateCumulative:                      " + test_generateCumulative())
-	print("test_same_community:                          " + test_same_community())
 	print("test_all_same_community:                      " + test_all_same_community())
 	print("test_get_k_lits:                              " + test_get_k_lits())
 	print("test_generateRandomFormula:                   " + test_generateRandomFormula())
