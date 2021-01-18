@@ -48,6 +48,7 @@ def generateMediumVec(n, m, k):
 # output:
 #   cummulative_vec         :   [a, a+b, a+b+c, a+b+c+d, ...]
 def generateCummulative(vec):
+	if len(vec) == 0: return []
 	cumulative_vec = [vec[0]]
 	for i in vec[1:]: cumulative_vec.append(i + cumulative_vec[-1])
 	return cumulative_vec
@@ -57,9 +58,9 @@ def var_to_lit(var):
 	# Select a variable with a random polarity
 	return var if random.randint(0, 1) else var * -1
 
-def get_lit(cumulative_vec, m, k):
+def get_lit(cumulative_vec):
 	# Sample literal according to the degree distribution
-	r = random.randint(0, m * k)
+	r = random.randint(1, cumulative_vec[-1])
 	for i, cumulative_sum in enumerate(cumulative_vec):
 		if r <= cumulative_sum: return var_to_lit(i + 1)
 
@@ -73,11 +74,11 @@ def get_lit(cumulative_vec, m, k):
 #                               is [a, a+b, a+b+c, a+b+c+d, ...]
 # output:
 #   tmp_clause              :   an intra-community clause of width k
-def get_k_lits(tmp_clause, m, k, cumulative_vec):
+def get_k_lits(tmp_clause, k, cumulative_vec):
 	# Sample distinct variables until the clause is size k
 	while len(tmp_clause) < k:
 		while True:
-			lit = get_lit(cumulative_vec, m, k)
+			lit = get_lit(cumulative_vec)
 			if (lit not in tmp_clause) and (-lit not in tmp_clause): break
 		tmp_clause.append(lit)
 	
@@ -93,16 +94,16 @@ def get_k_lits(tmp_clause, m, k, cumulative_vec):
 #                                   is [a, a+b, a+b+c, a+b+c+d, ...]
 # output:
 #   cnf                         :   the input cnf with one more clause
-def get_new_clause(cnf, clause, m, k, cumulative_vec):
+def get_new_clause(cnf, clause, k, cumulative_vec):
 	# Sample a new clause of size k
 	while True:
-		tmp_clause = get_k_lits(clause[:], m, k, cumulative_vec)
+		tmp_clause = get_k_lits(clause[:], k, cumulative_vec)
 		if tmp_clause not in cnf: return tmp_clause
 
 def get_community(v, community_id_upper_bounds):
 	# Get the largest upper bound less than the variable
 	for i, upper_bound in enumerate(community_id_upper_bounds):
-		if v < upper_bound: return community_id_upper_bounds[i - 1]
+		if v <= upper_bound: return community_id_upper_bounds[i - 1]
 
 # input:
 #   lits                        :   a vector of literals
@@ -114,9 +115,9 @@ def get_community(v, community_id_upper_bounds):
 #                                   False otherwise
 def all_same_community(lits, community_id_upper_bounds):
 	# Determine if all literals are in the same community
-	if len(lits) == 0: return True
-	required_community = get_community(lits[0], community_id_upper_bounds)
-	return all(get_community(lit, community_id_upper_bounds) for lit in lits)
+	if len(lits) <= 1: return True
+	required_community = get_community(abs(lits[0]), community_id_upper_bounds)
+	return all(required_community == get_community(abs(lit), community_id_upper_bounds) for lit in lits)
 
 def select_from_random_communities(clause, inter_vars_per_community, k):
 	# Randomly sample variables from random communities
@@ -154,9 +155,9 @@ def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upp
 def generateRandomFormula(n, m, k, cumulative_vec):
 	cnf = []
 	# Phase 1: make sure every variable is covered
-	for i in range(n    ): cnf.append(get_new_clause(cnf, [i + 1], m, k, cumulative_vec))
+	for i in range(min(n, m)): cnf.append(get_new_clause(cnf, [i + 1], k, cumulative_vec))
 	# Phase 2: add additional clauses according to degree distribution
-	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], m, k, cumulative_vec))
+	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], k, cumulative_vec))
 	return cnf
 
 # this function is for generating inter-community clauses
@@ -188,7 +189,7 @@ def generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_var
 			))
 
 	# Phase 2: distribute the remaining clauses randomly amongst the intercommunity variables
-	for c in range(int(inter_vars * cvr) - sum(len(com) for com in inter_vars_per_community)):
+	for c in range(int(degree * (inter_vars // degree) * cvr) - sum(len(com) for com in inter_vars_per_community)):
 		cnf.append(select_inter_vars(cnf, [], inter_vars_per_community, k, community_id_upper_bounds))
 
 	return cnf
