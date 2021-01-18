@@ -3,6 +3,7 @@ import math
 import os
 import random
 
+# generates a uniform degree vector with n variables, m clauses and width k
 def generateUniformVec(n, m, k):
 	"""
 	Generate a uniform degree vector where variable occurences are distributed evenly
@@ -14,6 +15,7 @@ def generateUniformVec(n, m, k):
 	for i in range(0, remainder): vec[i] += 1
 	return vec
 
+# generates a powerlaw degree vector with n variables, m clauses and width k
 def generatePowerlawVec(n, m, k):
 	"""
 	Generate an unbalanced degree vector
@@ -29,6 +31,8 @@ def generatePowerlawVec(n, m, k):
 
 	return vec
 
+# generates a degree vector with n variables, m clauses and width k that is not too balanced and
+# also not too unblanced
 def generateMediumVec(n, m, k):
     #somehow vec[0] is not modified after this call?
 	vec = generatePowerlawVec(n, m, k)
@@ -39,11 +43,16 @@ def generateMediumVec(n, m, k):
 		vec[-i] += diff
 	return vec
 
+# input:
+#   vec                     :   a degree vector [a, b, c, d, ...]
+# output:
+#   cummulative_vec         :   [a, a+b, a+b+c, a+b+c+d, ...]
 def generateCummulative(vec):
 	cumulative_vec = [vec[0]]
 	for i in vec[1:]: cumulative_vec.append(i + cumulative_vec[-1])
 	return cumulative_vec
 
+# assigns the polarity of var randomly
 def var_to_lit(var):
 	# Select a variable with a random polarity
 	return var if random.randint(0, 1) else var * -1
@@ -80,6 +89,14 @@ def get_community(v, community_id_upper_bounds):
 	for i, upper_bound in enumerate(community_id_upper_bounds):
 		if v < upper_bound: return community_id_upper_bounds[i - 1]
 
+# input:
+#   lits                        :   a vector of literals
+#   community_id_upper_bounds   :   an array of non-negative integers [0, x, y, z, ...] where x is the
+#                                   size of community 1, y-x is the size of community 2, and z-x is the
+#                                   size of community 3
+# output:
+#   result                      :   True if all the literals in liters are from the same community,
+#                                   False otherwise
 def all_same_community(lits, community_id_upper_bounds):
 	# Determine if all literals are in the same community
 	if len(lits) == 0: return True
@@ -96,6 +113,60 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 	tmp_clause.sort()
 	return tmp_clause
 
+# input:
+#   temp_clause             :   an array that either conains zero or one integer
+#   k                       :   clause width
+#   cumulative_vec          :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#                               is [a, a+b, a+b+c, a+b+c+d, ...]
+# output:
+#   temp_clause             :   an intra-community clause of width k
+def get_k_lits(temp_clause, k, cummulative_vec):
+    for l in range(k):
+        found = False
+        while not found:
+            r = random.randint(0, cummulative_vec[-1])
+            for i in range(len(cummulative_vec)):
+                if r <= cummulative_vec[i]:
+                    if i+1 not in temp_clause:
+                        temp_clause.append(i+1)
+                        found = True
+                        polarity=random.randint(0,1)
+                        if polarity == 0:
+                            temp_clause[-1] *= -1
+                        break;
+    temp_clause.sort()
+    return temp_clause
+
+
+# input:
+#   cnf                         :   A 2D array of clauses
+#   clause                      :   an array that either conains zero or one integer
+#   k                           :   clause width
+#   cumulative_vec              :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#                                   is [a, a+b, a+b+c, a+b+c+d, ...]
+# output:
+#   cnf                         :   the input cnf with one more clause
+
+def get_new_clause(cnf, clause, k, cummulative_vec):
+    tmp_clause = get_k_lits(clause, k, cummulative_vec)
+    while clause_existing(cnf, tmp_clause) is True:
+        tmp_clause = get_k_lits(clause, k, cummulative_vec)
+    cnf.append(tmp_clause)
+    return
+
+# fill clause with k random chosen literals
+# reroll if all literals are from the same community
+# input:
+#   cnf                         :   A 2D array of clauses
+#   clause                      :   an array that either conains zero or one integer
+#   inter_vars_per_community    :   A 2D array where the i'th element is an array containing the
+#                                   inter-community variables from the i'th community
+#   k                           :   clause width
+#   community_id_upper_bounds   :   an array of non-negative integers [0, x, y, z, ...] where x is the
+#                                   size of community 1, y-x is the size of community 2, and z-x is the
+#                                   size of community 3
+# output:
+#   temp_clause                 :   an inter-community clause of width k
 def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upper_bounds):
     while True:
 		# Randomly sample variables from random communities
@@ -114,6 +185,17 @@ def generateRandomFormula(n, m, k, cumulative_vec):
 	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], m, k, cumulative_vec))
 	return cnf
 
+# this function is for generating inter-community clauses
+# input:
+#   community_id_upper_bounds   :   an array of non-negative integers [0, x, y, z, ...] where x is the
+#                                   size of community 1, y-x is the size of community 2, and z-x is the
+#                                   size of community 3 
+#   cvr                         :   clause variable ratio
+#   k                           :   clause width
+#   cnf                         :   all the clauses we have so far
+#   inter_vars                  :   total number of inter_community variables
+# output:
+#   cmf                         :   contains intra-community clauses and inter-community clauses
 def generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_vars):
 	# Select inter-community variables
 	degree = len(community_id_upper_bounds) - 1

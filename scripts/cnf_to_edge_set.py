@@ -5,7 +5,6 @@ def read_file(file):
 	clauses = []
 	m = 0
 	n = 0
-
 	for line in f.readlines():
 		#skip lines until header
 		line = line.strip().split(" ")

@@ -5,6 +5,7 @@ import os
 import random
 import math
 import copy
+import VIG_to_CNF
 
 def get_leaf_graph(n):
 	edges_to_add = []
@@ -29,7 +30,6 @@ def get_leaf_graph(n):
 		edges_to_add.append([u, w])
 		edges_to_add.append([v, w])
 	g.add_edges(edges_to_add)
-
 	return g
 
 def combine_subgraphs(subgraphs):
@@ -84,7 +84,7 @@ def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fra
 	inter_vars_decay = 1
 	inter_vars = int(g.vcount()*inter_vars_fraction * inter_vars_decay)
 	#inter_edges = int(inter_vars*math.log(inter_vars)/2)
-	inter_edges = int(inter_vars * 3)
+	inter_edges = int(inter_vars * edge_density[level-1])
 	while True:
 		# phase 1: for each uncovered vertex, connect it to a vertex in another community
 		#print("phase 1 starts")
@@ -95,12 +95,10 @@ def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fra
 		end = community_id_upper_bounds[0]
 		for i in range(len(community_id_upper_bounds)):
 			end = community_id_upper_bounds[i]
-			random_inter_vars += random.sample(range(start, end-1), inter_vars/len(community_id_upper_bounds))
+			random_inter_vars += random.sample(range(start, end), inter_vars/len(community_id_upper_bounds))
 			start = end
-		#random_inter_vars = random.sample(range(0, g.vcount()), inter_vars)
 
 		uncovered = set(random_inter_vars)
-		# TODO: add an array for edges_to_add and add them all at once
 		edges_to_add=[]
 		while len(uncovered) != 0:
 			# u is a random vertex in uncovered
@@ -122,14 +120,9 @@ def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fra
 				#g.add_edge(v, w)
 				edges_to_add.append([v, w])
 				inter_edges_count+=1
-		g.add_edges(edges_to_add)
 
-		# print("phase 1 done")
-		# print("phase 2 started")
 		# phase 2: randomly assign the remaining edges
-		# TODO: instead of randomly picking u and v, we can fix u first and randomly picking a v from a different community
 		if inter_edges >= inter_edges_count:
-			edges_to_add=[]
 			while inter_edges - inter_edges_count > 0:
 				u = random.sample(random_inter_vars, 1)[0]
 				v, w = pick_inter_triangle(g, u, random_inter_vars, community_id_upper_bounds)
@@ -147,8 +140,13 @@ def add_edges_to_combined_disconnected_subgraphs(level, depth, g, inter_vars_fra
 					inter_edges_count+=1
 			#print("phase 2 done")
 			g.add_edges(edges_to_add)
+			inter_edges_g = igraph.Graph()
+			inter_edges_g.add_vertices(g.vcount())
+			inter_edges_g.add_edges(edges_to_add)
 			break
-	return g
+
+	print(int(clause_density[level-1]*len(random_inter_vars)))
+	return g, VIG_to_CNF.VIG_to_CNF(inter_edges_g, int(clause_density[level-1]*len(random_inter_vars)), 3)
 
 def count_inter_vars(g, community_id_upper_bounds):
 	inter_vars = set()
@@ -177,59 +175,47 @@ def print_matrix(matrix):
 		print(i)
 	return
 
+def get_leaf_clauses(g):
+	return VIG_to_CNF.VIG_to_CNF(g, int(clause_density[-1]*g.vcount()), 3)
+
+def combine_subcnfs(subgraphs, subcnfs):
+	total_variable_count = 0
+	combined_subcnfs = []
+	for cnf_index, subcnf in enumerate(subcnfs):
+		if cnf_index > 0:
+			for clause in subcnf:
+				for lit_index in range(len(clause)):
+					clause[lit_index] += total_variable_count
+		combined_subcnfs += subcnf
+		total_variable_count += subgraphs[cnf_index].vcount()
+	return combined_subcnfs
+
 def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree):
 	
 	if level == depth:
-		# change get leaf community to return an igraph object
-		#return igraph.Graph.Adjacency(get_leaf_adjacency_matrix(leaf_community_size), mode="UNDIRECTED")
-		return get_leaf_graph(leaf_community_size)
+		g = get_leaf_graph(leaf_community_size)
+		cnf = get_leaf_clauses(g)
+		return g, cnf
 	current_degree = degree[level-1]
 
 	subgraphs = []
+	subcnfs = []
 	for i in range(current_degree):
-		subgraphs.append(generate_VIG(level+1, depth, leaf_community_size, inter_vars_fraction, degree))
-	
+		subgraph, subcnf = generate_VIG(level+1, depth, leaf_community_size, inter_vars_fraction, degree)
+		subgraphs.append(subgraph)
+		subcnfs.append(subcnf)
+
+	# combining the subgraphs and sub-cnfs
 	combined_disconnected_subgraphs, community_id_upper_bounds = combine_subgraphs(subgraphs)
+	# update variable names in sub-cnfs
+	combined_disconnected_subcnfs = combine_subcnfs(subgraphs, subcnfs)
 
-	#iteration = 1
-	# start searching for valid matrices 
-	#while True:
-	# print("level {0}".format(level))
-	# we add current_inter_edge number of 1's in the matrix (excluding the diagonal)
-	updated_combined_graph = add_edges_to_combined_disconnected_subgraphs(level, depth, combined_disconnected_subgraphs, inter_vars_fraction, community_id_upper_bounds)
-	#print("done")
-		# 	# check current_modularity
-		# 	# switch off checking for modularity
-		# 	actual_modularity = compute_modularity(updated_combined_graph, community_id_upper_bounds)
-		# 	if abs(current_modularity - actual_modularity) < 0.1:
-		# 		break
-		#break
-		#iteration+=1
-	return updated_combined_graph
+	# add inter-community edges and inter-community clauses
+	updated_combined_graph, inter_edges_clauses = add_edges_to_combined_disconnected_subgraphs(level, depth, combined_disconnected_subgraphs, inter_vars_fraction, community_id_upper_bounds)
+	updated_combined_cnf = combined_disconnected_subcnfs + inter_edges_clauses
+	print("vount " + str(updated_combined_graph.vcount()))
+	return updated_combined_graph, updated_combined_cnf
 
-# have inputs
-# need inter_edges > inter_vars*log(inter_vars)/2, log base e.
-# experiment 1: fixing the size of graph, vary inter_vars and inter_edges
-	# 1.1 fixing inter_vars, scale up inter_edges
-	# 1.2 fix inter_edges, scale down inter_vars
-# experiment 2: 
-# depth = 7
-# leaf_community_size = 10
-# # let inter_vars be the density (a fraction of total number of vars in the subgraph)
-# inter_vars_fraction = 0.3
-# degree = [2, 2, 2, 2, 2, 2]
-# #modularity = [0.7, 0.6, 0.5, 0.4]
-
-
-# g = generate_VIG(1, depth, leaf_community_size, inter_vars_fraction, degree)
-
-# layout = g.layout("large")
-# visual_style = {}
-# visual_style["vertex_size"] = 5
-# visual_style["layout"] = layout
-# visual_style["bbox"] = (1000, 1000)
-# visual_style["margin"] = 10
-# vertex_clustering = g.community_multilevel()
-# igraph.plot(vertex_clustering, "HCS.svg", mark_groups = True, **visual_style)
-
-#print_matrix(adjacency_matrix)
+cnf = []
+edge_density = [12.8, 12.8]
+clause_density = [4.00, 4.00]

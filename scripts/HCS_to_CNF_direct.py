@@ -24,6 +24,17 @@ def combine_subcnfs(subcnfs):
 		community_id_upper_bounds.append(community_id_upper_bounds[-1] + largest_var)
 	return combined_subcnfs, community_id_upper_bounds
 
+# inputs:
+#   level                      :   current level in the recursion
+#   depth-1 				   :   the overall depth
+#   inter_vars_fraction		   :   the portion of variables in a subcommunity that are inter community variables		
+#   community_id_upper_bounds  :   an array of non-negative integers [0, x, y, z, ...] where x is the
+#   						       size of community 1, y-x is the size of community 2, and z-x is the
+#   						       size of community 3
+#   k 						   :   clause width
+#   cnf 					   :   the current formula which we will add inter-community clauses to
+#outputs:
+#   cnf 					   :   the cnf with inter-community clauses added
 def add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, community_id_upper_bounds, k, cnf):
 	# Ensure that the actual number of inter-community variables is a multiple of the degree 
 	total_vars = community_id_upper_bounds[-1]
