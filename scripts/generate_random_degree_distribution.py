@@ -32,7 +32,7 @@ def generatePowerlawVec(n, m, k):
 	return vec
 
 # generates a degree vector with n variables, m clauses and width k that is not too balanced and
-# also not too unblanced
+# also not too unbalanced
 def generateMediumVec(n, m, k):
     #somehow vec[0] is not modified after this call?
 	vec = generatePowerlawVec(n, m, k)
@@ -66,6 +66,13 @@ def get_lit(cumulative_vec, m, k):
 	# The program should never get here!
 	assert False
 
+# input:
+#   tmp_clause              :   an array that either conains zero or one integer
+#   k                       :   clause width
+#   cumulative_vec          :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#                               is [a, a+b, a+b+c, a+b+c+d, ...]
+# output:
+#   tmp_clause              :   an intra-community clause of width k
 def get_k_lits(tmp_clause, m, k, cumulative_vec):
 	# Sample distinct variables until the clause is size k
 	while len(tmp_clause) < k:
@@ -78,6 +85,14 @@ def get_k_lits(tmp_clause, m, k, cumulative_vec):
 	tmp_clause.sort()
 	return tmp_clause
 
+# input:
+#   cnf                         :   A 2D array of clauses
+#   clause                      :   an array that either conains zero or one integer
+#   k                           :   clause width
+#   cumulative_vec              :   the cummulative_vec of degree vector [a, b, c, d, ...] 
+#                                   is [a, a+b, a+b+c, a+b+c+d, ...]
+# output:
+#   cnf                         :   the input cnf with one more clause
 def get_new_clause(cnf, clause, m, k, cumulative_vec):
 	# Sample a new clause of size k
 	while True:
@@ -112,47 +127,6 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 		tmp_clause.append(var_to_lit(random_var))
 	tmp_clause.sort()
 	return tmp_clause
-
-# input:
-#   temp_clause             :   an array that either conains zero or one integer
-#   k                       :   clause width
-#   cumulative_vec          :   the cummulative_vec of degree vector [a, b, c, d, ...] 
-#                               is [a, a+b, a+b+c, a+b+c+d, ...]
-# output:
-#   temp_clause             :   an intra-community clause of width k
-def get_k_lits(temp_clause, k, cummulative_vec):
-    for l in range(k):
-        found = False
-        while not found:
-            r = random.randint(0, cummulative_vec[-1])
-            for i in range(len(cummulative_vec)):
-                if r <= cummulative_vec[i]:
-                    if i+1 not in temp_clause:
-                        temp_clause.append(i+1)
-                        found = True
-                        polarity=random.randint(0,1)
-                        if polarity == 0:
-                            temp_clause[-1] *= -1
-                        break;
-    temp_clause.sort()
-    return temp_clause
-
-
-# input:
-#   cnf                         :   A 2D array of clauses
-#   clause                      :   an array that either conains zero or one integer
-#   k                           :   clause width
-#   cumulative_vec              :   the cummulative_vec of degree vector [a, b, c, d, ...] 
-#                                   is [a, a+b, a+b+c, a+b+c+d, ...]
-# output:
-#   cnf                         :   the input cnf with one more clause
-
-def get_new_clause(cnf, clause, k, cummulative_vec):
-    tmp_clause = get_k_lits(clause, k, cummulative_vec)
-    while clause_existing(cnf, tmp_clause) is True:
-        tmp_clause = get_k_lits(clause, k, cummulative_vec)
-    cnf.append(tmp_clause)
-    return
 
 # fill clause with k random chosen literals
 # reroll if all literals are from the same community
