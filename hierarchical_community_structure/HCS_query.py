@@ -81,13 +81,20 @@ def get_param_average(g, param, ids):
 def get_param_average_by_level(g, param, ids_by_depth):
 	return [get_param_average(g, param, ids) for ids in ids_by_depth]
 
+def compute_and_output_averages(g, ids, label, compute_per_level):
+	padding = max(len(param) for param in parameters)
+	avg_func = get_param_average_by_level if compute_per_level else get_param_average
+	print("Average {} parameter values{}:".format(label, " per level" if compute_per_level else ""))
+	for param in parameters: print("{}: {}".format(param.ljust(padding), avg_func(g, param, ids)))
+	print("")
+
 def tree_query(g, all_ids_by_depth):
 	# IDs for computing averages
 	all_ids               = range(g.vcount())
 	leaf_ids              = get_leaf_ids    (g, all_ids)
 	non_leaf_ids          = get_non_leaf_ids(g, all_ids)
-	leaf_ids_by_depth     = [get_leaf_ids    (g, ids    ) for ids in ids_by_depth]
-	non_leaf_ids_by_depth = [get_non_leaf_ids(g, ids    ) for ids in ids_by_depth]
+	leaf_ids_by_depth     = [get_leaf_ids    (g, ids) for ids in all_ids_by_depth]
+	non_leaf_ids_by_depth = [get_non_leaf_ids(g, ids) for ids in all_ids_by_depth]
 
 	# Compute derived parameters
 	parameters.append('inter_edges/inter_vars')
@@ -95,28 +102,22 @@ def tree_query(g, all_ids_by_depth):
 		v['inter_edges/inter_vars'] = float('nan') if v['inter_vars'] == 0 else v['inter_edges'] / v['inter_vars']
 
 	# Compute and output averages
-	padding = max(len(param) for param in parameters)
+	compute_and_output_averages(g, all_ids              , 'community', False)
+	compute_and_output_averages(g, leaf_ids             , 'leaf'     , False)
+	compute_and_output_averages(g, non_leaf_ids         , 'non-leaf' , False)
+	compute_and_output_averages(g, all_ids_by_depth     , 'community', True)
+	compute_and_output_averages(g, leaf_ids_by_depth    , 'leaf'     , True)
+	compute_and_output_averages(g, non_leaf_ids_by_depth, 'non-leaf' , True)
 
-	print("\nAverage parameter values:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average(g, param, all_ids)))
-
-	print("\nAverage leaf parameter values:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average(g, param, leaf_ids)))
-
-	print("\nAverage non-leaf parameter values:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average(g, param, non_leaf_ids)))
-
-	print("\nAverage parameter values per level:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average_by_level(g, param, all_ids_by_depth)))
-
-	print("\nAverage leaf parameter values per level:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average_by_level(g, param, leaf_ids_by_depth)))
-
-	print("\nAverage non-leaf parameter values per level:")
-	for param in parameters: print("{}: {}".format(param.ljust(padding), get_param_average_by_level(g, param, non_leaf_ids_by_depth)))
+	print("Total number of communities          : {}".format(len(all_ids)))
+	print("Total number of leaves               : {}".format(len(leaf_ids)))
+	print("Total number of non-leaves           : {}".format(len(non_leaf_ids)))
+	print("Total number of communities per level: {}".format([len(ids) for ids in all_ids_by_depth]))
+	print("Total number of leaves per level     : {}".format([len(ids) for ids in leaf_ids_by_depth]))
+	print("Total number of non-leaves per level : {}".format([len(ids) for ids in non_leaf_ids_by_depth]))
 
 if __name__ == '__main__':
-	# Input verification
+	# Input validation
 	if len(sys.argv) != 2:
 		print("Usage: python {} <CNF_PATH>".format(sys.argv[0]))
 		exit()
