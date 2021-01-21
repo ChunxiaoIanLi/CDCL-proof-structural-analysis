@@ -81,6 +81,49 @@ def test_basic_merge_res():
 
 	return testResult.result_str()
 
+def test_mergeability_scores():
+	def test_mergeability_scores_expect(testResult, clauses, expected_ms1n1, expected_ms1n2, expected_ms2n1, expected_ms2n2):
+		# Load clauses
+		clause_list = cnf_to_clauses_list(clauses)
+		pmi.setClauses(clause_list)
+		varset = range(1, max(abs(l) for c in clauses for l in c) + 1) + [0] if clauses else [0]
+
+		# Calculate stats
+		mode = 0
+		pmi.calculate(varset, mode)
+		ms1n1 = pmi.getMergeabilityScore1Norm1()
+		ms1n2 = pmi.getMergeabilityScore1Norm2()
+		ms2n1 = pmi.getMergeabilityScore2Norm1()
+		ms2n2 = pmi.getMergeabilityScore2Norm2()
+
+		if ms1n1 != expected_ms1n1 and not(math.isnan(ms1n1) and math.isnan(expected_ms1n1)):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <ms1n1> = <{}>; expected <ms1n1> = <{}>".format(testResult.totalNumTests, ms1n1, expected_ms1n1))
+		elif ms1n2 != expected_ms1n2 and not(math.isnan(ms1n2) and math.isnan(expected_ms1n2)):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <ms1n2> = <{}>; expected <ms1n2> = <{}>".format(testResult.totalNumTests, ms1n2, expected_ms1n2))
+		elif ms2n1 != expected_ms2n1 and not(math.isnan(ms2n1) and math.isnan(expected_ms2n1)):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <ms2n1> = <{}>; expected <ms2n1> = <{}>".format(testResult.totalNumTests, ms2n1, expected_ms2n1))
+		elif ms2n2 != expected_ms2n2 and not(math.isnan(ms2n2) and math.isnan(expected_ms2n2)):
+			testResult += TEST_FAIL
+			print("Test {} failed: actual <ms2n2> = <{}>; expected <ms2n2> = <{}>".format(testResult.totalNumTests, ms2n2, expected_ms2n2))
+		else: testResult += TEST_OKAY
+
+	testResult = TestResult(0, 0)
+
+	# Test computation of mergeability scores
+	nan = float('nan')
+	test_mergeability_scores_expect(testResult, [                     ],   nan,   nan,  nan,   nan)
+	test_mergeability_scores_expect(testResult, [[1, 2   ], [-1, -2   ]],  nan,   0.0,  nan,   0.0)
+	test_mergeability_scores_expect(testResult, [[1, 2, 3], [-1, -2, 3]],  nan,   0.0,  nan,   0.0)
+	test_mergeability_scores_expect(testResult, [[1, 2   ], [-1,  3   ]],  0.0,   0.0,  0.0,   0.0)
+	test_mergeability_scores_expect(testResult, [[1, 2   ], [-1,  2   ]], 1./2, 1./ 8, 1./1, 1./ 4)
+	test_mergeability_scores_expect(testResult, [[1, 2, 3], [-1,  2, 3]], 1./2, 1./ 8, 1./1, 1./ 4)
+	test_mergeability_scores_expect(testResult, [[1, 2, 3], [-1,  2, 4]], 1./4, 1./16, 1./3, 1./12)
+
+	return testResult.result_str()
+
 def test_var_set():
 	testResult = TestResult(0, 0)
 
@@ -174,7 +217,8 @@ def test_cvr():
 	return testResult.result_str()
 
 if __name__ == "__main__":
-	print("test_basic_merge_res: " + test_basic_merge_res())
-	print("test_var_set:         " + test_var_set())
-	print("test_width:           " + test_width())
-	print("test_cvr:             " + test_cvr())
+	print("test_basic_merge_res:     " + test_basic_merge_res())
+	print("test_mergeability_scores: " + test_mergeability_scores())
+	print("test_var_set:             " + test_var_set())
+	print("test_width:               " + test_width())
+	print("test_cvr:                 " + test_cvr())
