@@ -10,9 +10,9 @@ parameters = [
 	'inter_edges'       ,
 	'inter_vars'        ,
 	'mergeability1norm1',
-	'mergeability1norm2',
-	'mergeability2norm1',
-	'mergeability2norm2',
+	# 'mergeability1norm2',
+	# 'mergeability2norm1',
+	# 'mergeability2norm2',
 	'modularity'        ,
 	'post_width'        ,
 	'pre_width'         ,
@@ -76,16 +76,19 @@ def get_leaf_ids(g, ids):
 	return filter(lambda id: not g.outdegree(id), ids)
 
 def get_param_average(g, param, ids):
-	return float('nan') if len(ids) == 0 else sum([g.vs()[i][param] for i in ids]) / float(len(ids))
+	return [float('nan') if len(ids) == 0 else sum([g.vs()[i][param] for i in ids]) / float(len(ids))]
 
 def get_param_average_by_level(g, param, ids_by_depth):
-	return [get_param_average(g, param, ids) for ids in ids_by_depth]
+	return [get_param_average(g, param, ids)[0] for ids in ids_by_depth]
+
+def array_as_string(array):
+	return ' '.join(str(i) for i in array)
 
 def compute_and_output_averages(g, ids, label, compute_per_level):
 	padding = max(len(param) for param in parameters)
 	avg_func = get_param_average_by_level if compute_per_level else get_param_average
 	print("Average {} parameter values{}:".format(label, " per level" if compute_per_level else ""))
-	for param in parameters: print("{}: {}".format(param.ljust(padding), avg_func(g, param, ids)))
+	for param in parameters: print("{}: {}".format(param.ljust(padding), array_as_string(avg_func(g, param, ids))))
 	print("")
 
 def tree_query(g, all_ids_by_depth):
@@ -112,9 +115,9 @@ def tree_query(g, all_ids_by_depth):
 	print("Total number of communities          : {}".format(len(all_ids)))
 	print("Total number of leaves               : {}".format(len(leaf_ids)))
 	print("Total number of non-leaves           : {}".format(len(non_leaf_ids)))
-	print("Total number of communities per level: {}".format([len(ids) for ids in all_ids_by_depth]))
-	print("Total number of leaves per level     : {}".format([len(ids) for ids in leaf_ids_by_depth]))
-	print("Total number of non-leaves per level : {}".format([len(ids) for ids in non_leaf_ids_by_depth]))
+	print("Total number of communities per level: {}".format(array_as_string([len(ids) for ids in all_ids_by_depth])))
+	print("Total number of leaves per level     : {}".format(array_as_string([len(ids) for ids in leaf_ids_by_depth])))
+	print("Total number of non-leaves per level : {}".format(array_as_string([len(ids) for ids in non_leaf_ids_by_depth])))
 
 if __name__ == '__main__':
 	# Input validation
