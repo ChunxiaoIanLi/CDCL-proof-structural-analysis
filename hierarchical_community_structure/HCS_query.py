@@ -7,8 +7,6 @@ parameters = [
 	'degree'            ,
 	'community_size'    ,
 	'cvr'               ,
-	'inter_edges'       ,
-	'inter_vars'        ,
 	'mergeability1norm1',
 	# 'mergeability1norm2',
 	# 'mergeability2norm1',
@@ -16,6 +14,8 @@ parameters = [
 	'modularity'        ,
 	'post_width'        ,
 	'pre_width'         ,
+	'inter_edges'       ,
+	'inter_vars'        ,
 ]
 
 def reconstruct_community_edges(degrees):
@@ -75,6 +75,15 @@ def get_non_leaf_ids(g, ids):
 def get_leaf_ids(g, ids):
 	return filter(lambda id: not g.outdegree(id), ids)
 
+def get_parent_ids(g, ids):
+	if not ids: return []
+	parent_ids = []
+	for id in ids:
+		neighbors = g.neighbors(id)
+		neighbors.sort()
+		parent_ids.append(min(id, neighbors[0]) if neighbors else id)
+	return parent_ids
+
 def get_param_average(g, param, ids):
 	return [float('nan') if len(ids) == 0 else sum([g.vs()[i][param] for i in ids]) / float(len(ids))]
 
@@ -94,15 +103,22 @@ def compute_and_output_averages(g, ids, label, compute_per_level):
 def tree_query(g, all_ids_by_depth):
 	# IDs for computing averages
 	all_ids               = range(g.vcount())
+	parent_ids            = get_parent_ids  (g, all_ids)
 	leaf_ids              = get_leaf_ids    (g, all_ids)
 	non_leaf_ids          = get_non_leaf_ids(g, all_ids)
 	leaf_ids_by_depth     = [get_leaf_ids    (g, ids) for ids in all_ids_by_depth]
 	non_leaf_ids_by_depth = [get_non_leaf_ids(g, ids) for ids in all_ids_by_depth]
 
 	# Compute derived parameters
-	parameters.append('inter_edges/inter_vars')
-	for v in g.vs():
-		v['inter_edges/inter_vars'] = float('nan') if v['inter_vars'] == 0 else v['inter_edges'] / v['inter_vars']
+	parameters.append('inter_edges/inter_vars'              )
+	parameters.append('parent_inter_edges'                  )
+	parameters.append('parent_inter_vars'                   )
+	parameters.append('parent_inter_edges/parent_inter_vars')
+	for i, v in enumerate(g.vs()):
+		v['parent_inter_edges'                  ] = float('nan') if i == parent_ids[i] else g.vs()[parent_ids[i]]['inter_edges']
+		v['parent_inter_vars'                   ] = float('nan') if i == parent_ids[i] else g.vs()[parent_ids[i]]['inter_vars' ]
+		v['inter_edges/inter_vars'              ] = float('nan') if v['inter_vars'       ] == 0 else v['inter_edges'       ] / v['inter_vars'       ]
+		v['parent_inter_edges/parent_inter_vars'] = float('nan') if v['parent_inter_vars'] == 0 else v['parent_inter_edges'] / v['parent_inter_vars']
 
 	# Compute and output averages
 	compute_and_output_averages(g, all_ids              , 'community', False)

@@ -1,4 +1,5 @@
 import HCS_query
+import igraph
 
 class TestResult:
 	def __init__(self, testResults = 0, totalNumTests = 0):
@@ -72,5 +73,27 @@ def test_reconstruct_community_edges():
 
 	return testResult.result_str()
 
+def test_get_parent_ids():
+	def expect_get_parent_ids(testResult, n, edges, expected):
+		g = igraph.Graph(directed=True)
+		g.add_vertices(n)
+		g.add_edges(edges)
+		testResult += expect(testResult, HCS_query.get_parent_ids(g, range(n)), expected)
+
+	testResult = TestResult(0, 0)
+
+	expect_get_parent_ids(testResult, 0, [], [])
+	expect_get_parent_ids(testResult, 1, [], [0])
+	expect_get_parent_ids(testResult, 2, [(0, 1)], [0, 0])
+	expect_get_parent_ids(testResult, 2, [], [0, 1])
+	expect_get_parent_ids(testResult, 3, [(0, 1), (0, 2)], [0, 0, 0])
+	expect_get_parent_ids(testResult, 3, [(0, 1), (1, 2)], [0, 0, 1])
+	expect_get_parent_ids(testResult, 4, [(0, 1), (0, 2), (1, 3)], [0, 0, 0, 1])
+	expect_get_parent_ids(testResult, 5, [(0, 1), (0, 2), (1, 3), (2, 4)], [0, 0, 0, 1, 2])
+	expect_get_parent_ids(testResult, 5, [(2, 4), (1, 3), (0, 2), (0, 1)], [0, 0, 0, 1, 2])
+
+	return testResult.result_str()
+
 if __name__ == '__main__':
 	print("test_reconstruct_community_edges: " + test_reconstruct_community_edges())
+	print("test_get_parent_ids:              " + test_get_parent_ids())
