@@ -122,8 +122,10 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 	# Randomly sample variables from random communities
 	tmp_clause = clause[:]
 	while len(tmp_clause) < k:
-		random_comm = random.randint(0, len(inter_vars_per_community) - 1)
-		random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
+		while True:
+			random_comm = random.randint(0, len(inter_vars_per_community) - 1)
+			random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
+			if (random_var not in tmp_clause) and (-random_var not in tmp_clause): break
 		tmp_clause.append(var_to_lit(random_var))
 	tmp_clause.sort()
 	return tmp_clause
@@ -142,13 +144,13 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 # output:
 #   temp_clause                 :   an inter-community clause of width k
 def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upper_bounds):
-    while True:
+	while True:
 		# Randomly sample variables from random communities
 		# In the future: sample variables according to degree distribution
-        tmp_clause = select_from_random_communities(clause, inter_vars_per_community, k)
+		tmp_clause = select_from_random_communities(clause, inter_vars_per_community, k)
 
 		# Check if the clause is eligible to be be put into the CNF
-        if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
+		if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
 			return tmp_clause
 
 def generateRandomFormula(n, m, k, cumulative_vec):
@@ -176,7 +178,7 @@ def generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_var
 	inter_vars_per_community = [
 		random.sample(
 			range(community_id_upper_bounds[i] + 1, community_id_upper_bounds[i + 1] + 1),
-			inter_vars / degree
+			inter_vars // degree
 		) for i in range(degree)
 	]
 
