@@ -57,27 +57,22 @@ def var_to_lit(var):
 	# Select a variable with a random polarity
 	return var if random.randint(0, 1) else var * -1
 
-def get_lit(cumulative_vec):
+def get_lit(degree_vec):
 	# Sample literal according to the degree distribution
-	r = random.randint(1, cumulative_vec[-1])
-	for i, cumulative_sum in enumerate(cumulative_vec):
-		if r <= cumulative_sum: return var_to_lit(i + 1)
-
-	# The program should never get here!
-	assert False
+	var = random.choices(population=range(len(degree_vec)), weights=degree_vec)[0] + 1
+	return var_to_lit(var)
 
 # input:
 #   tmp_clause              :   an array that either conains zero or one integer
 #   k                       :   clause width
-#   cumulative_vec          :   the cumulative_vec of degree vector [a, b, c, d, ...] 
-#                               is [a, a+b, a+b+c, a+b+c+d, ...]
+#   degree_vec              :   the degree vector [a, b, c, d, ...] 
 # output:
 #   tmp_clause              :   an intra-community clause of width k
-def get_k_lits(tmp_clause, k, cumulative_vec):
+def get_k_lits(tmp_clause, k, degree_vec):
 	# Sample distinct variables until the clause is size k
 	while len(tmp_clause) < k:
 		while True:
-			lit = get_lit(cumulative_vec)
+			lit = get_lit(degree_vec)
 			if (lit not in tmp_clause) and (-lit not in tmp_clause): break
 		tmp_clause.append(lit)
 	
@@ -89,14 +84,13 @@ def get_k_lits(tmp_clause, k, cumulative_vec):
 #   cnf                         :   A 2D array of clauses
 #   clause                      :   an array that either conains zero or one integer
 #   k                           :   clause width
-#   cumulative_vec              :   the cumulative_vec of degree vector [a, b, c, d, ...] 
-#                                   is [a, a+b, a+b+c, a+b+c+d, ...]
+#   degree_vec                  :   the degree vector [a, b, c, d, ...] 
 # output:
 #   cnf                         :   the input cnf with one more clause
-def get_new_clause(cnf, clause, k, cumulative_vec):
+def get_new_clause(cnf, clause, k, degree_vec):
 	# Sample a new clause of size k
 	while True:
-		tmp_clause = get_k_lits(clause[:], k, cumulative_vec)
+		tmp_clause = get_k_lits(clause[:], k, degree_vec)
 		if tmp_clause not in cnf: return tmp_clause
 
 def get_community(v, community_id_upper_bounds):
@@ -153,12 +147,12 @@ def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upp
 		if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
 			return tmp_clause
 
-def generateRandomFormula(n, m, k, cumulative_vec):
+def generateRandomFormula(n, m, k, degree_vec):
 	cnf = []
 	# Phase 1: make sure every variable is covered
-	for i in range(min(n, m)): cnf.append(get_new_clause(cnf, [i + 1], k, cumulative_vec))
+	for i in range(min(n, m)): cnf.append(get_new_clause(cnf, [i + 1], k, degree_vec))
 	# Phase 2: add additional clauses according to degree distribution
-	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], k, cumulative_vec))
+	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], k, degree_vec))
 	return cnf
 
 # this function is for generating inter-community clauses

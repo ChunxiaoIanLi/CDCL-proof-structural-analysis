@@ -1,6 +1,5 @@
 import generate_random_degree_distribution
 from cnf_to_edge_set import cnf_to_edge_set, read_file, cnf_to_clauses_list
-import igraph
 import sys
 import os
 import random
@@ -50,8 +49,7 @@ def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree,
 	if level == depth:
 		num_clauses    = int(round(leaf_community_size * cvr[-1]))
 		uniform_vec    = generate_random_degree_distribution.generateUniformVec   (leaf_community_size, num_clauses, k)
-		cumulative_vec = generate_random_degree_distribution.generateCummulative  (uniform_vec)
-		leaf_community = generate_random_degree_distribution.generateRandomFormula(leaf_community_size, num_clauses, k, cumulative_vec)
+		leaf_community = generate_random_degree_distribution.generateRandomFormula(leaf_community_size, num_clauses, k, uniform_vec)
 		return leaf_community
 
 	# Generate sub-communities and sub-CNFs
@@ -87,5 +85,5 @@ if __name__ == "__main__":
 	max_var = max(max(abs(l) for l in c) for c in final_cnf)
 	
 	# Output CNF
-	VIG_to_CNF.write_cnf(final_cnf, max_var, len(final_cnf), out_cnf)
+	VIG_to_CNF.write_cnf(final_cnf, max_var, out_cnf)
 
