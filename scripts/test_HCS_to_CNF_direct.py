@@ -275,9 +275,11 @@ def test_get_k_lits():
 	expect_get_k_lits(testResult, [ ], 3, [10, 10, 10, 10, 10])
 	expect_get_k_lits(testResult, [ ], 4, [10, 10, 10, 10, 10])
 	expect_get_k_lits(testResult, [ ], 5, [10, 10, 10, 10, 10])
+	expect_get_k_lits(testResult, [ ], 5, [10,  5,  2,  1,  1])
 	expect_get_k_lits(testResult, [1], 3, [10, 10, 10, 10, 10])
 	expect_get_k_lits(testResult, [1], 4, [10, 10, 10, 10, 10])
 	expect_get_k_lits(testResult, [1], 5, [10, 10, 10, 10, 10])
+	expect_get_k_lits(testResult, [1], 5, [10,  5,  2,  1,  1])
 
 	return testResult.result_str()
 
@@ -318,6 +320,8 @@ def test_generateRandomFormula():
 	expect_generateRandomFormula(testResult, 7, 10, 3, [ 5,  5,  4,  4,  4,  4,  4])
 	expect_generateRandomFormula(testResult, 7, 20, 3, [ 9,  9,  9,  9,  8,  8,  8])
 	expect_generateRandomFormula(testResult, 7, 30, 3, [13, 13, 13, 13, 13, 13, 12])
+	expect_generateRandomFormula(testResult, 7, 30, 3, [25, 21, 18, 13,  9,  3,  1])
+	expect_generateRandomFormula(testResult, 7, 25, 2, [16, 12,  8,  6,  4,  2,  2])
 
 	return testResult.result_str()
 
