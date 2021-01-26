@@ -1,5 +1,6 @@
 import HCS_to_CNF_direct
 import generate_random_degree_distribution
+from decimal import Decimal
 
 class TestResult:
 	def __init__(self, testResults = 0, totalNumTests = 0):
@@ -47,12 +48,12 @@ def test_combine_subcnfs():
 
 def test_add_edges_to_combined_disconnected_cnfs():
 	def expect_add_edges_to_combined_disconnected_cnfs(testResult,
-		level, depth, inter_vars_fraction, community_id_upper_bounds, k, cnf,
-		expected_num_inter_vars
+		level, depth, offset, degree_vector, inter_vars_fraction, community_id_upper_bounds, k, cnf,
+		expected_num_inter_vars, cvr
 	):
 		# Since this function makes use of randomness, we just check graph invariants
 		num_original_clauses = len(cnf)
-		cnf = HCS_to_CNF_direct.add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, community_id_upper_bounds, k, cnf)
+		cnf = HCS_to_CNF_direct.add_edges_to_combined_disconnected_cnfs(level, depth, offset, degree_vector, inter_vars_fraction, community_id_upper_bounds, k, cnf, cvr)
 		
 		# Remove original edges so that we are only left with the new edges
 		new_clauses = cnf[num_original_clauses:]
@@ -74,14 +75,16 @@ def test_add_edges_to_combined_disconnected_cnfs():
 		testResult += TEST_OKAY if success else TEST_FAIL
 
 	testResult = TestResult()
-	global cvr
-	cvr = [1.]
 	cnf = [[1, 2, 3], [-1, -2, 3], [2, 3], [4, 5, 6], [-4, 5, -6], [7, 8, 9], [10, -11, -12], [-8, 9, 11]]
+	n = max(abs(l) for c in cnf for l in c)
+	degree_vector = [0] * n
+	for c in cnf:
+		for l in c: degree_vector[abs(l) - 1] += 1
 
-	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 1/3., [0, 6, 12], 3, cnf[:], 4)
-	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 1/2., [0, 6, 12], 3, cnf[:], 6)
-	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 1/3., [0, 6, 12], 4, cnf[:], 4)
-	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 1/2., [0, 6, 12], 4, cnf[:], 6)
+	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 0, degree_vector, 1/3., [0, 6, 12], 3, cnf[:], 4, [1.])
+	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 0, degree_vector, 1/2., [0, 6, 12], 3, cnf[:], 6, [1.])
+	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 0, degree_vector, 1/3., [0, 6, 12], 4, cnf[:], 4, [1.])
+	expect_add_edges_to_combined_disconnected_cnfs(testResult, 1, 1, 0, degree_vector, 1/2., [0, 6, 12], 4, cnf[:], 6, [1.])
 
 	return testResult.result_str()
 
@@ -181,30 +184,32 @@ def test_all_same_community():
 	return testResult.result_str()
 
 def choose(n, k):
-    """
-    A fast way to calculate binomial coefficients by Andrew Dalke (contrib).
+	"""
+	A fast way to calculate binomial coefficients by Andrew Dalke (contrib).
 	https://stackoverflow.com/questions/3025162/statistics-combinations-in-python
-    """
-    if 0 <= k <= n:
-        ntok = 1
-        ktok = 1
-        for t in range(1, min(k, n - k) + 1):
-            ntok *= n
-            ktok *= t
-            n -= 1
-        return ntok // ktok
-    else: return 0
+	"""
+	if 0 <= k <= n:
+		ntok = 1
+		ktok = 1
+		for t in range(1, min(k, n - k) + 1):
+			ntok *= n
+			ktok *= t
+			n -= 1
+		return ntok // ktok
+	else:
+		print(k, n)
+		return 0
 
 def expect_polarity_distribution(testResult, lits):
 	# Check probability of this polarity distribution
 	# P = choose(total, num_negative) * (chance_negative)^(num_negative) * (chance_non_negative)^(num_non_negative)
 	expected_negation_fraction = 0.5
 	num_negative = sum(int(l) < 0 for l in lits)
-	actual_probability = choose(len(lits), num_negative) * (expected_negation_fraction)**(num_negative) * (1 - expected_negation_fraction)**(len(lits) - num_negative)
+	actual_probability = choose(len(lits), num_negative) * Decimal(expected_negation_fraction)**(num_negative) * (1 - Decimal(expected_negation_fraction))**(len(lits) - num_negative)
 
 	# Calculate probability of the expected polarity distribution
 	expected_num_negative = int(len(lits) * expected_negation_fraction)
-	expected_probability = choose(len(lits), expected_num_negative) * (expected_negation_fraction)**(expected_num_negative) * (1 - expected_negation_fraction)**(len(lits) - expected_num_negative)
+	expected_probability = choose(len(lits), expected_num_negative) * Decimal(expected_negation_fraction)**(expected_num_negative) * (1 - Decimal(expected_negation_fraction))**(len(lits) - expected_num_negative)
 
 	# If the chance of this distribution is less than 0.1% of the probability of the expected distribution, raise an error
 	min_chance = 0.001
@@ -216,23 +221,25 @@ def expect_polarity_distribution(testResult, lits):
 
 def expect_degree_distribution(testResult, lits, input_degree_vector):
 	# Initialize probability and degree vectors
-	total_degree = sum(abs(degree) for degree in input_degree_vector)
-	probability_vector = [degree / total_degree for degree in input_degree_vector]
+	total_original_degree = sum(abs(degree) for degree in input_degree_vector)
+	probability_vector = [degree / total_original_degree for degree in input_degree_vector]
 	actual_degree_vector = [0] * len(input_degree_vector)
+	total_actual_degree = sum(abs(degree) for degree in actual_degree_vector)
+	scaling = total_actual_degree / total_original_degree
 	for l in lits: actual_degree_vector[abs(l) - 1] += 1
-	
+
 	# Calculate probability of the expected degree distribution
-	expected_probability = 1.0
+	expected_probability = Decimal(1.0)
 	num_lits = len(lits)
 	for i, degree in enumerate(input_degree_vector):
-		expected_probability *= choose(num_lits, degree) * probability_vector[i]**degree
+		expected_probability *= choose(num_lits, int(round(scaling * degree))) * Decimal(probability_vector[i]**degree)
 		num_lits -= degree
 
 	# Calculate probability of the given degree distribution
-	actual_probability = 1.0
-	num_lits = len(lits)
+	actual_probability = Decimal(1.0)
+	num_lits = sum(actual_degree_vector)
 	for i, degree in enumerate(actual_degree_vector):
-		actual_probability *= choose(num_lits, degree) * probability_vector[i]**degree
+		actual_probability *= choose(num_lits, degree) * Decimal(probability_vector[i]**degree)
 		num_lits -= degree
 
 	# If the chance of this distribution is less than 0.1% of the probability of the expected distribution, raise an error
@@ -281,6 +288,50 @@ def test_get_k_lits():
 	expect_get_k_lits(testResult, [1], 5, [10, 10, 10, 10, 10])
 	expect_get_k_lits(testResult, [1], 5, [10,  5,  2,  1,  1])
 
+	expect_get_k_lits(testResult, [1], 500, [1] * 500)
+
+	return testResult.result_str()
+
+def test_select_from_random_communities():
+	testResult = TestResult()
+
+	# Check that the function generates all combinations of clauses
+	num_vars = 2
+	expected_num_clauses = 2**num_vars
+	num_tests = 10
+	for i in range(num_tests):
+		cnf = []
+		while len(cnf) < expected_num_clauses:
+			while True:
+				tmp_clause = generate_random_degree_distribution.select_from_random_communities([], [1] * num_vars, range(1, num_vars + 1), num_vars, range(0, num_vars + 1))
+				if tmp_clause not in cnf: break
+			cnf.append(tmp_clause)
+	
+		# Check number of clauses
+		testResult += expect(testResult, len(cnf), expected_num_clauses)
+
+	return testResult.result_str()
+
+def test_select_inter_vars():
+	testResult = TestResult()
+
+	# Check that the function generates all combinations of clauses
+	num_vars = 2
+	expected_num_clauses = 2**num_vars
+	num_tests = 10
+	for i in range(num_tests):
+		cnf = []
+		while len(cnf) < expected_num_clauses:
+			cnf.append(generate_random_degree_distribution.select_inter_vars(cnf, [], [1] * num_vars, range(1, num_vars + 1), num_vars, range(0, num_vars + 1)))
+
+		# Check number of clauses
+		testResult += expect(testResult, len(cnf), expected_num_clauses)
+
+	# Check that the function generates the expected distribution
+	num_vars = 1000
+	lits = generate_random_degree_distribution.select_inter_vars([], [], [1] * num_vars, range(1, num_vars + 1), num_vars, range(0, num_vars + 1))
+	expect_polarity_distribution(testResult, lits)
+
 	return testResult.result_str()
 
 def test_generateRandomFormula():
@@ -322,14 +373,16 @@ def test_generateRandomFormula():
 	expect_generateRandomFormula(testResult, 7, 30, 3, [13, 13, 13, 13, 13, 13, 12])
 	expect_generateRandomFormula(testResult, 7, 30, 3, [25, 21, 18, 13,  9,  3,  1])
 	expect_generateRandomFormula(testResult, 7, 25, 2, [16, 12,  8,  6,  4,  2,  2])
+	
+	expect_generateRandomFormula(testResult, 100, 500, 3, [1] * 100)
 
 	return testResult.result_str()
 
 def test_generateRandomInterFormula():
-	def expect_generateRandomInterFormula(testResult, community_id_upper_bounds, cvr, k, cnf, inter_vars):
+	def expect_generateRandomInterFormula(testResult, offset, degree_vector, community_id_upper_bounds, cvr, k, cnf, inter_vars):
 		# Since this function makes use of randomness, we just check invariants
 		prev_size = len(cnf)
-		cnf = generate_random_degree_distribution.generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_vars)
+		cnf = generate_random_degree_distribution.generateRandomInterFormula(offset, degree_vector, community_id_upper_bounds, cvr, k, cnf, inter_vars)
 		inter_cnf = cnf[prev_size:]
 
 		# Check number of inter-community variables
@@ -357,18 +410,59 @@ def test_generateRandomInterFormula():
 				break
 		if success: testResult += TEST_OKAY
 
+		# Check probability of this distribution
+		lits = [l for c in inter_cnf for l in c]
+		actual_degree_vector = [0] * len(degree_vector)
+		for l in lits: actual_degree_vector[abs(l) - 1] += 1
+		expected_degree_vector = [degree_vector[i] if deg else 0 for i, deg in enumerate(actual_degree_vector)]
+		expect_polarity_distribution(testResult, lits)
+		expect_degree_distribution(testResult, lits, expected_degree_vector)
+
 	testResult = TestResult()
 
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [   ], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1], [2, 3, 4]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [   ], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [[1]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 4, [[1], [2, 3, 4]], 4)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [   ], 5)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1]], 5)
-	expect_generateRandomInterFormula(testResult, [0, 10, 20], 4., 3, [[1], [2, 3, 4]], 5)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [   ], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [[1]], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [[1], [2, 3, 4]], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 4, [   ], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 4, [[1]], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 4, [[1], [2, 3, 4]], 4)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [   ], 5)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [[1]], 5)
+	expect_generateRandomInterFormula(testResult, 0, [1] * 20, [0, 10, 20], 3., 3, [[1], [2, 3, 4]], 5)
+	
+	expect_generateRandomInterFormula(testResult, 0, [1] * 500, [0, 250, 500], 3., 3, [[1], [2, 3, 4]], 5)
 
+	return testResult.result_str()
+
+def test_generate_VIG():
+	def expect_generate_VIG(depth, leaf_community_size, inter_vars_fraction, degree, k, cvr):
+		# Generate CNF
+		n = leaf_community_size * degree**(depth - 1)
+		degree_vector = [1] * n
+		cnf = HCS_to_CNF_direct.generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, [degree] * (depth - 1), k, cvr)
+
+		# Check probability of this distribution
+		lits = [l for c in cnf for l in c]
+		actual_degree_vector = [0] * len(degree_vector)
+		for l in lits: actual_degree_vector[abs(l) - 1] += 1
+		expect_polarity_distribution(testResult, lits)
+		expected_degree_vector = [degree_vector[i] if deg else 0 for i, deg in enumerate(actual_degree_vector)]
+		expect_degree_distribution(testResult, lits, expected_degree_vector)
+
+	testResult = TestResult()
+
+	expect_generate_VIG(1, 10, 0.0, 2, 3, [4.0])
+	expect_generate_VIG(2, 10, 0.0, 2, 3, [3.5, 4.0])
+	expect_generate_VIG(3, 10, 0.0, 2, 3, [3.0, 3.5, 4.0])
+
+	expect_generate_VIG(1, 10, 0.2, 2, 3, [4.0])
+	expect_generate_VIG(2, 10, 0.2, 2, 3, [3.5, 4.0])
+	expect_generate_VIG(3, 10, 0.2, 2, 3, [3.0, 3.5, 4.0])
+
+	expect_generate_VIG(1, 50, 0.3, 4, 3, [4.0])
+	expect_generate_VIG(2, 50, 0.3, 4, 3, [3.5, 4.0])
+	expect_generate_VIG(3, 50, 0.3, 4, 3, [3.0, 3.5, 4.0])
+	
 	return testResult.result_str()
 
 if __name__ == "__main__":
@@ -378,5 +472,8 @@ if __name__ == "__main__":
 	print("test_generatePowerlawVec:                     " + test_generatePowerlawVec())
 	print("test_all_same_community:                      " + test_all_same_community())
 	print("test_get_k_lits:                              " + test_get_k_lits())
+	print("test_select_from_random_communities:          " + test_select_from_random_communities())
+	print("test_select_inter_vars:                       " + test_select_inter_vars())
 	print("test_generateRandomFormula:                   " + test_generateRandomFormula())
 	print("test_generateRandomInterFormula:              " + test_generateRandomInterFormula())
+	print("test_generate_VIG:                            " + test_generate_VIG())
