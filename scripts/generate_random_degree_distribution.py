@@ -31,6 +31,14 @@ def generatePowerlawVec(n, m, k):
 
 	return vec
 
+# generates a powerlaw degree vector with n variables and powerlaw beta
+def generatePowerlawVecFromBeta(n, beta):
+	"""
+	Generate a powerlaw degree vector
+	Powerlaw is defined as: the fraction of vertices of degree k is proportional to k^(-beta)
+	"""
+	return [(1 + i)**(-beta) for i in range(n)]
+
 # generates a degree vector with n variables, m clauses and width k that is not too balanced and
 # also not too unbalanced
 def generateMediumVec(n, m, k):
