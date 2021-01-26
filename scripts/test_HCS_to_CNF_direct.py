@@ -220,33 +220,23 @@ def expect_polarity_distribution(testResult, lits):
 	else: testResult += TEST_OKAY
 
 def expect_degree_distribution(testResult, lits, input_degree_vector):
-	# Initialize probability and degree vectors
+	# Initialize degree vectors
 	total_original_degree = sum(abs(degree) for degree in input_degree_vector)
-	probability_vector = [degree / total_original_degree for degree in input_degree_vector]
 	actual_degree_vector = [0] * len(input_degree_vector)
+	for l in lits: actual_degree_vector[abs(l) - 1] += 1
 	total_actual_degree = sum(abs(degree) for degree in actual_degree_vector)
 	scaling = total_actual_degree / total_original_degree
-	for l in lits: actual_degree_vector[abs(l) - 1] += 1
+	input_degree_vector = [scaling * degree for degree in input_degree_vector]
 
-	# Calculate probability of the expected degree distribution
-	expected_probability = Decimal(1.0)
-	num_lits = len(lits)
-	for i, degree in enumerate(input_degree_vector):
-		expected_probability *= choose(num_lits, int(round(scaling * degree))) * Decimal(probability_vector[i]**degree)
-		num_lits -= degree
-
-	# Calculate probability of the given degree distribution
-	actual_probability = Decimal(1.0)
-	num_lits = sum(actual_degree_vector)
-	for i, degree in enumerate(actual_degree_vector):
-		actual_probability *= choose(num_lits, degree) * Decimal(probability_vector[i]**degree)
-		num_lits -= degree
+	# Calculate distance from expectation
+	distance = sum(abs(actual_degree_vector[i] - input_degree_vector[i]) for i in range(len(input_degree_vector)))
+	avg_dist = distance / len(input_degree_vector)
 
 	# If the chance of this distribution is less than 0.1% of the probability of the expected distribution, raise an error
-	min_chance = 0.001
-	if actual_probability / expected_probability < min_chance:
+	min_dist = sum(deg**0.5 for deg in input_degree_vector)
+	if avg_dist > min_dist:
 		testResult += TEST_FAIL
-		print("Test {} failed: probability of degree distribution = <{}>; expected >= {}".format(testResult.totalNumTests, actual_probability, expected_probability))
+		print("Test {} failed: avg. distance = <{}>; expected <= <{}>".format(testResult.totalNumTests, avg_dist, min_dist))
 		print("Received degree distribution: {}; expected: {}".format(actual_degree_vector, input_degree_vector))
 	else: testResult += TEST_OKAY
 
@@ -436,9 +426,36 @@ def test_generateRandomInterFormula():
 
 def test_generate_VIG():
 	def expect_generate_VIG(depth, leaf_community_size, inter_vars_fraction, degree, k, cvr):
-		# Generate CNF
+		# Generate CNF with uniform degree vector
 		n = leaf_community_size * degree**(depth - 1)
 		degree_vector = [1] * n
+		cnf = HCS_to_CNF_direct.generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, [degree] * (depth - 1), k, cvr)
+
+		# Check probability of this distribution
+		lits = [l for c in cnf for l in c]
+		actual_degree_vector = [0] * len(degree_vector)
+		for l in lits: actual_degree_vector[abs(l) - 1] += 1
+		expect_polarity_distribution(testResult, lits)
+		expected_degree_vector = [degree_vector[i] if deg else 0 for i, deg in enumerate(actual_degree_vector)]
+		expect_degree_distribution(testResult, lits, expected_degree_vector)
+
+		# Generate CNF with non-uniform degree vector
+		n = leaf_community_size * degree**(depth - 1)
+		degree_vector = [1] * n
+		degree_vector[0] = leaf_community_size
+		cnf = HCS_to_CNF_direct.generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, [degree] * (depth - 1), k, cvr)
+
+		# Check probability of this distribution
+		lits = [l for c in cnf for l in c]
+		actual_degree_vector = [0] * len(degree_vector)
+		for l in lits: actual_degree_vector[abs(l) - 1] += 1
+		expect_polarity_distribution(testResult, lits)
+		expected_degree_vector = [degree_vector[i] if deg else 0 for i, deg in enumerate(actual_degree_vector)]
+		expect_degree_distribution(testResult, lits, expected_degree_vector)
+
+		# Generate CNF with non-uniform degree vector
+		n = leaf_community_size * degree**(depth - 1)
+		degree_vector = range(1, n + 1)
 		cnf = HCS_to_CNF_direct.generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, [degree] * (depth - 1), k, cvr)
 
 		# Check probability of this distribution
