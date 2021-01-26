@@ -112,15 +112,29 @@ def all_same_community(lits, community_id_upper_bounds):
 	required_community = get_community(abs(lits[0]), community_id_upper_bounds)
 	return all(required_community == get_community(abs(lit), community_id_upper_bounds) for lit in lits)
 
-def select_from_random_communities(clause, inter_vars_per_community, k):
+def add_var_from_degree_vector(var_set, variables, degree_vector):
+	while True:
+		new_var = random.choices(variables, degree_vector)[0]
+		if new_var not in var_set: break
+	var_set.append(new_var)
+	return var_set
+
+def add_lit_from_degree_vector(clause, variables, degree_vector):
+	add_var_from_degree_vector(clause, variables, degree_vector)
+	clause[-1] = var_to_lit(clause[-1])
+	return clause
+
+def select_from_random_communities(clause, com_degree_vector, inter_vars, k, community_id_upper_bounds):
+	# Ensure that the clause is non-empty
+	if not clause: clause = add_lit_from_degree_vector(clause, inter_vars, com_degree_vector)
+
+	# Sample a variable from a different community
+	while True:
+		tmp_clause = add_lit_from_degree_vector(clause[:], inter_vars, com_degree_vector)
+		if not all_same_community(tmp_clause, community_id_upper_bounds): break
+
 	# Randomly sample variables from random communities
-	tmp_clause = clause[:]
-	while len(tmp_clause) < k:
-		while True:
-			random_comm = random.randint(0, len(inter_vars_per_community) - 1)
-			random_var = random.sample(inter_vars_per_community[random_comm], 1)[0]
-			if (random_var not in tmp_clause) and (-random_var not in tmp_clause): break
-		tmp_clause.append(var_to_lit(random_var))
+	while len(tmp_clause) < k: add_lit_from_degree_vector(tmp_clause, inter_vars, com_degree_vector)
 	tmp_clause.sort()
 	return tmp_clause
 
@@ -129,6 +143,8 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 # input:
 #   cnf                         :   A 2D array of clauses
 #   clause                      :   an array that either conains zero or one integer
+#	com_degree_vector           :   the subset of the degree vector containing only the degrees of the
+#                                   inter-community variables
 #   inter_vars_per_community    :   A 2D array where the i'th element is an array containing the
 #                                   inter-community variables from the i'th community
 #   k                           :   clause width
@@ -137,11 +153,10 @@ def select_from_random_communities(clause, inter_vars_per_community, k):
 #                                   size of community 3
 # output:
 #   temp_clause                 :   an inter-community clause of width k
-def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upper_bounds):
+def select_inter_vars(cnf, clause, com_degree_vector, inter_vars, k, community_id_upper_bounds):
 	while True:
-		# Randomly sample variables from random communities
-		# In the future: sample variables according to degree distribution
-		tmp_clause = select_from_random_communities(clause, inter_vars_per_community, k)
+		# Randomly sample variables from random communities, according to degree distribution
+		tmp_clause = select_from_random_communities(clause[:], com_degree_vector, inter_vars, k, community_id_upper_bounds)
 
 		# Check if the clause is eligible to be be put into the CNF
 		if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
@@ -150,13 +165,15 @@ def select_inter_vars(cnf, clause, inter_vars_per_community, k, community_id_upp
 def generateRandomFormula(n, m, k, degree_vec):
 	cnf = []
 	# Phase 1: make sure every variable is covered
-	for i in range(min(n, m)): cnf.append(get_new_clause(cnf, [i + 1], k, degree_vec))
+	for i in range(min(n, m)): cnf.append(get_new_clause(cnf, [var_to_lit(i + 1)], k, degree_vec))
 	# Phase 2: add additional clauses according to degree distribution
 	for i in range(m - n): cnf.append(get_new_clause(cnf, [     ], k, degree_vec))
 	return cnf
 
 # this function is for generating inter-community clauses
 # input:
+#	offset                     :   the variable ID offset for the current community
+#	degree_vector              :   the degree vector
 #   community_id_upper_bounds   :   an array of non-negative integers [0, x, y, z, ...] where x is the
 #                                   size of community 1, y-x is the size of community 2, and z-x is the
 #                                   size of community 3 
@@ -165,31 +182,28 @@ def generateRandomFormula(n, m, k, degree_vec):
 #   cnf                         :   all the clauses we have so far
 #   inter_vars                  :   total number of inter_community variables
 # output:
-#   cmf                         :   contains intra-community clauses and inter-community clauses
-def generateRandomInterFormula(community_id_upper_bounds, cvr, k, cnf, inter_vars):
-	# Select inter-community variables
+#   cnf                         :   contains intra-community clauses and inter-community clauses
+def generateRandomInterFormula(offset, degree_vector, community_id_upper_bounds, cvr, k, cnf, num_inter_vars):
+	# Select inter-community variables according to degree vector
 	degree = len(community_id_upper_bounds) - 1
-	inter_vars_per_community = [
-		random.sample(
-			range(community_id_upper_bounds[i] + 1, community_id_upper_bounds[i + 1] + 1),
-			inter_vars // degree
-		) for i in range(degree)
-	]
+	inter_vars = []
+	for i in range(degree):
+		curr_community_inter_vars = []
+		community_vars = range(community_id_upper_bounds[i] + 1, community_id_upper_bounds[i + 1] + 1)
+		community_degree_vector = degree_vector[offset + community_id_upper_bounds[i] : offset + community_id_upper_bounds[i + 1]]
+		for j in range(num_inter_vars // degree):
+			add_var_from_degree_vector(curr_community_inter_vars, community_vars, community_degree_vector)
+		inter_vars += curr_community_inter_vars
+
+	# Generate the subset of the degree vector containing only the degrees of the inter-community variables
+	com_degree_vector = [degree_vector[offset + iv - 1] for iv in inter_vars]
 
 	# Phase 1: make sure every inter-community variable appears in some clause
-	for com in inter_vars_per_community:
-		for iv in com:
-			cnf.append(select_inter_vars(
-				cnf, [var_to_lit(iv)], inter_vars_per_community, k, community_id_upper_bounds
-			))
+	for iv in inter_vars:
+		cnf.append(select_inter_vars(cnf, [var_to_lit(iv)], com_degree_vector, inter_vars, k, community_id_upper_bounds))
 
 	# Phase 2: distribute the remaining clauses randomly amongst the intercommunity variables
-	for c in range(int(degree * (inter_vars // degree) * cvr) - sum(len(com) for com in inter_vars_per_community)):
-		cnf.append(select_inter_vars(cnf, [], inter_vars_per_community, k, community_id_upper_bounds))
+	for c in range(int(degree * (num_inter_vars // degree) * cvr) - len(inter_vars)):
+		cnf.append(select_inter_vars(cnf, [], com_degree_vector, inter_vars, k, community_id_upper_bounds))
 
 	return cnf
-
-if __name__ == "__main__":
-	n = int(sys.argv[1])
-	m = int(sys.argv[2])
-	k = int(sys.argv[3])
