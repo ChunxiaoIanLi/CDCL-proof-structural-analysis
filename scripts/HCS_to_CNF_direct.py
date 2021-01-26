@@ -94,7 +94,7 @@ if __name__ == "__main__":
 	n = leaf_community_size * num_leaf_communities
 
 	# Generate CNF
-	beta = 2.3
+	beta = (2 * k - 1) / (k - 1) # Interesting beta (https://arxiv.org/pdf/1706.08431.pdf)
 	degree_vector = generate_random_degree_distribution.generatePowerlawVecFromBeta(n, beta)
 	final_cnf = generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, degree_per_level, k, cvr)
 	
