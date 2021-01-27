@@ -142,11 +142,16 @@ def select_from_random_communities(clause, com_degree_vector, inter_vars, k, com
 	# Ensure that the clause is non-empty
 	com_degree_vector_copy = com_degree_vector[:]
 	if not clause: clause = add_lit_from_degree_vector(clause, inter_vars, com_degree_vector_copy)
+	first_community = get_community(abs(clause[0]), community_id_upper_bounds)
 
+	# Modify weights to ensure we select a variable from a different community
+	for i in range(len(com_degree_vector_copy)):
+		if get_community(inter_vars[i], community_id_upper_bounds) == first_community:
+			com_degree_vector_copy[i] = 0
+	
 	# Sample a variable from a different community
-	while True:
-		tmp_clause = add_lit_from_degree_vector(clause[:], inter_vars, com_degree_vector_copy)
-		if not all_same_community(tmp_clause, community_id_upper_bounds): break
+	tmp_clause = add_lit_from_degree_vector(clause[:], inter_vars, com_degree_vector_copy)
+	assert(not all_same_community(tmp_clause, community_id_upper_bounds))
 
 	# Randomly sample variables from random communities
 	com_degree_vector_copy = com_degree_vector[:]
@@ -176,8 +181,7 @@ def select_inter_vars(cnf, clause, com_degree_vector, inter_vars, k, community_i
 		tmp_clause = select_from_random_communities(clause[:], com_degree_vector, inter_vars, k, community_id_upper_bounds)
 
 		# Check if the clause is eligible to be be put into the CNF
-		if (not all_same_community(tmp_clause, community_id_upper_bounds)) and (tmp_clause not in cnf):
-			return tmp_clause
+		if tmp_clause not in cnf: return tmp_clause
 
 def generateRandomFormula(n, m, k, degree_vec):
 	cnf = []
