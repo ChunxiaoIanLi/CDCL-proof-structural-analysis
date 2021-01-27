@@ -122,27 +122,36 @@ def all_same_community(lits, community_id_upper_bounds):
 
 def add_var_from_degree_vector(var_set, variables, degree_vector):
 	while True:
-		new_var = random.choices(variables, degree_vector)[0]
-		if new_var not in var_set: break
+		i = random.choices(range(len(variables)), degree_vector)[0]
+		new_var = variables[i]
+		degree_vector[i] = 0 # Select without replacement
+		if new_var not in var_set and -new_var not in var_set: break
 	var_set.append(new_var)
 	return var_set
 
 def add_lit_from_degree_vector(clause, variables, degree_vector):
-	add_var_from_degree_vector(clause, variables, degree_vector)
-	clause[-1] = var_to_lit(clause[-1])
+	while True:
+		i = random.choices(range(len(variables)), degree_vector)[0]
+		new_var = variables[i]
+		degree_vector[i] = 0 # Select without replacement
+		if new_var not in clause and -new_var not in clause: break
+	clause.append(var_to_lit(new_var))
 	return clause
 
 def select_from_random_communities(clause, com_degree_vector, inter_vars, k, community_id_upper_bounds):
 	# Ensure that the clause is non-empty
-	if not clause: clause = add_lit_from_degree_vector(clause, inter_vars, com_degree_vector)
+	com_degree_vector_copy = com_degree_vector[:]
+	if not clause: clause = add_lit_from_degree_vector(clause, inter_vars, com_degree_vector_copy)
 
 	# Sample a variable from a different community
 	while True:
-		tmp_clause = add_lit_from_degree_vector(clause[:], inter_vars, com_degree_vector)
+		tmp_clause = add_lit_from_degree_vector(clause[:], inter_vars, com_degree_vector_copy)
 		if not all_same_community(tmp_clause, community_id_upper_bounds): break
 
 	# Randomly sample variables from random communities
-	while len(tmp_clause) < k: add_lit_from_degree_vector(tmp_clause, inter_vars, com_degree_vector)
+	com_degree_vector_copy = com_degree_vector[:]
+	while len(tmp_clause) < k:
+		add_lit_from_degree_vector(tmp_clause, inter_vars, com_degree_vector_copy)
 	tmp_clause.sort()
 	return tmp_clause
 
@@ -198,7 +207,7 @@ def generateRandomInterFormula(offset, degree_vector, community_id_upper_bounds,
 	for i in range(degree):
 		curr_community_inter_vars = []
 		community_vars = range(community_id_upper_bounds[i] + 1, community_id_upper_bounds[i + 1] + 1)
-		community_degree_vector = degree_vector[offset + community_id_upper_bounds[i] : offset + community_id_upper_bounds[i + 1]]
+		community_degree_vector = list(degree_vector[offset + community_id_upper_bounds[i] : offset + community_id_upper_bounds[i + 1]])
 		for j in range(num_inter_vars // degree):
 			add_var_from_degree_vector(curr_community_inter_vars, community_vars, community_degree_vector)
 		inter_vars += curr_community_inter_vars

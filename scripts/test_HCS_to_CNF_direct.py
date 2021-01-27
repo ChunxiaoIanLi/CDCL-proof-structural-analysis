@@ -339,6 +339,13 @@ def test_generateRandomFormula():
 				testResult += expect(testResult, len(clause), k)
 				success = False
 				break
+			
+			# Check for duplicate variables
+			var_set = set(abs(l) for l in clause)
+			if len(var_set) != k:
+				testResult += expect(testResult, len(var_set), k)
+				success = False
+				break
 		if success: testResult += TEST_OKAY
 
 		# Check that the largest generated variable falls within expected range
@@ -394,10 +401,19 @@ def test_generateRandomInterFormula():
 		# Check sizes of clauses
 		success = True
 		for clause in inter_cnf:
+			# Check size of clause
 			if len(clause) != k:
 				testResult += expect(testResult, len(clause), k)
 				success = False
 				break
+
+			# Check for duplicate variables
+			var_set = set(abs(l) for l in clause)
+			if len(var_set) != k:
+				testResult += expect(testResult, len(var_set), k)
+				success = False
+				break
+			
 		if success: testResult += TEST_OKAY
 
 		# Check probability of this distribution
