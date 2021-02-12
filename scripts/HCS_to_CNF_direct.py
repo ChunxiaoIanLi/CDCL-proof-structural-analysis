@@ -1,6 +1,5 @@
 import generate_random_degree_distribution
 from cnf_to_edge_set import cnf_to_edge_set, read_file, cnf_to_clauses_list
-import igraph
 import sys
 import os
 import random
@@ -27,15 +26,17 @@ def combine_subcnfs(subcnfs):
 # inputs:
 #   level                      :   current level in the recursion
 #   depth-1 				   :   the overall depth
+#	offset                     :   the variable ID offset for the current community
+#	degree_vector              :   the degree vector
 #   inter_vars_fraction		   :   the portion of variables in a subcommunity that are inter community variables		
 #   community_id_upper_bounds  :   an array of non-negative integers [0, x, y, z, ...] where x is the
 #   						       size of community 1, y-x is the size of community 2, and z-x is the
 #   						       size of community 3
 #   k 						   :   clause width
 #   cnf 					   :   the current formula which we will add inter-community clauses to
-#outputs:
+# outputs:
 #   cnf 					   :   the cnf with inter-community clauses added
-def add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, community_id_upper_bounds, k, cnf):
+def add_edges_to_combined_disconnected_cnfs(level, depth, offset, degree_vector, inter_vars_fraction, community_id_upper_bounds, k, cnf, cvr):
 	# Ensure that the actual number of inter-community variables is a multiple of the degree 
 	total_vars = community_id_upper_bounds[-1]
 	inter_vars = int(total_vars * inter_vars_fraction)
@@ -43,21 +44,22 @@ def add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, c
 	actual_inter_vars = degree * (inter_vars // degree)
 
 	# Actually add the edges to the CNFs
-	return generate_random_degree_distribution.generateRandomInterFormula(community_id_upper_bounds, cvr[level-1], k, cnf, actual_inter_vars)
+	return generate_random_degree_distribution.generateRandomInterFormula(offset, degree_vector, community_id_upper_bounds, cvr[level-1], k, cnf, actual_inter_vars)
 
-def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree, k):
+def generate_VIG(level, depth, offset, degree_vector, leaf_community_size, inter_vars_fraction, degree, k, cvr):
 	# Generate leaf community
 	if level == depth:
 		num_clauses    = int(round(leaf_community_size * cvr[-1]))
-		uniform_vec    = generate_random_degree_distribution.generateUniformVec   (leaf_community_size, num_clauses, k)
-		cumulative_vec = generate_random_degree_distribution.generateCummulative  (uniform_vec)
-		leaf_community = generate_random_degree_distribution.generateRandomFormula(leaf_community_size, num_clauses, k, cumulative_vec)
+		leaf_degree_vec = degree_vector[offset : offset + leaf_community_size]
+		leaf_community = generate_random_degree_distribution.generateRandomFormula(leaf_community_size, num_clauses, k, leaf_degree_vec)
 		return leaf_community
 
 	# Generate sub-communities and sub-CNFs
 	current_degree = degree[level - 1]
+	vars_per_subtree = leaf_community_size
+	for deg in degree[level:]: vars_per_subtree *= deg
 	subcnfs = [
-		generate_VIG(level + 1, depth, leaf_community_size, inter_vars_fraction, degree, k)
+		generate_VIG(level + 1, depth, offset + i * vars_per_subtree, degree_vector, leaf_community_size, inter_vars_fraction, degree, k, cvr)
 		for i in range(current_degree)
 	]
 
@@ -65,10 +67,11 @@ def generate_VIG(level, depth, leaf_community_size, inter_vars_fraction, degree,
 	combined_disconnected_subcnfs, community_id_upper_bounds = combine_subcnfs(subcnfs)
 
 	# Add inter-community edges and inter-community clauses
-	updated_combined_cnf = add_edges_to_combined_disconnected_cnfs(level, depth, inter_vars_fraction, community_id_upper_bounds, k, combined_disconnected_subcnfs)
+	updated_combined_cnf = add_edges_to_combined_disconnected_cnfs(
+		level, depth, offset, degree_vector, inter_vars_fraction,
+		community_id_upper_bounds, k, combined_disconnected_subcnfs, cvr
+	)
 	return updated_combined_cnf
-
-cvr = [2.0, 2.0, 4.0]
 
 if __name__ == "__main__":
 	# Parse arguments
@@ -80,12 +83,21 @@ if __name__ == "__main__":
 	out_cnf             = str  (sys.argv[6])
 	degree_per_level    = [degree] * (depth - 1)
 
-	# Generate CNF
-	final_cnf = generate_VIG(1, depth, leaf_community_size, inter_vars_fraction, degree_per_level, k)
+	# cvr
+	leaf_cvr = 4.1
+	cvr = [(i + 1) * leaf_cvr / depth for i in range(depth)]
+	
+	# Calculate total number of variables
+	num_leaf_communities = 1
+	for i, deg in enumerate(degree_per_level):
+		num_leaf_communities *= deg
+	n = leaf_community_size * num_leaf_communities
 
-	# Find largest variable
-	max_var = max(max(abs(l) for l in c) for c in final_cnf)
+	# Generate CNF
+	beta = (2 * k - 1) / (k - 1) # Interesting beta (https://arxiv.org/pdf/1706.08431.pdf)
+	degree_vector = generate_random_degree_distribution.generatePowerlawVecFromBeta(n, beta)
+	final_cnf = generate_VIG(1, depth, 0, degree_vector, leaf_community_size, inter_vars_fraction, degree_per_level, k, cvr)
 	
 	# Output CNF
-	VIG_to_CNF.write_cnf(final_cnf, max_var, len(final_cnf), out_cnf)
+	VIG_to_CNF.write_cnf(final_cnf, n, out_cnf)
 
