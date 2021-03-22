@@ -8,9 +8,6 @@ import ctypes
 import math
 from PMILib import PMI
 
-lib = ctypes.CDLL('/home/ianli/CDCL-proof-structural-analysis/scripts/resolvability/libmergeability.so')
-
-
 def write_data(outfile, extension, data):
 	outfilename = outfile + extension
 	f = open(outfilename, "w")
