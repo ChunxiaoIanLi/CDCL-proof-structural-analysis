@@ -5,19 +5,23 @@ These scripts are also dependent on `python-igraph`, which needs to be installed
 
 ## clustering_ed.py
 This script recursively computes HCS parameters.
+
 Usage: `python ./clustering_ed.py <CNF_PATH>`
   * `CNF_PATH`: the path to the CNF formula over which to calculate HCS parameters.
 
 ## test_clustering_ed.py
 This script runs unit tests on `clustering_ed.py`.
+
 Usage: `python ./test_clustering_ed.py`
 
 ## HCS_query.py
 This script aggregates the output data from `clustering_ed.py` to produce a summary of the HCS decomposition.
 This script should be run after running `clustering_ed.py`.
+
 Usage: `python ./HCS_query.py <CNF_PATH>`
   * `CNF_PATH`: the path to the CNF formula over which to summarize the HCS decomposition.
 
 ## test_HCS_query.py
 This script runs unit tests on `HCS_query.py`.
+
 Usage: `python ./test_HCS_query.py`
