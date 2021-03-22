@@ -21,4 +21,5 @@ Usage: `python3 ./HCS_to_CNF_direct.py <DEPTH> <LEAF_SIZE> <INTER_VAR_DENSITY> <
 
 ## test_HCS_to_CNF_direct.py
 This script runs unit tests on `HCS_to_CNF_direct.py`.
+
 Usage: `python3 ./test_HCS_to_CNF_direct.py`
