@@ -1,7 +1,7 @@
 # Hierarchical Community Structure Parameter Computation
 The scripts in this directory can be used to compute HCS parameter values over a CNF formula.
 These scripts are dependent on the parameter computation tools in `../param-computation/`. The Makefile in this directory will compile and fetch the appropriate code. Run this Makefile using `make`.
-These scripts are also dependent on python-igraph, which needs to be installed separately. Installation instructions are available [here](https://igraph.org/python/)
+These scripts are also dependent on `python-igraph`, which needs to be installed separately. Installation instructions are available [here](https://igraph.org/python/).
 
 ## clustering_ed.py
 This script recursively computes HCS parameters.
